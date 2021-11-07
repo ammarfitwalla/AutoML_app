@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<style>
+label{
+    font-size:20px;
+}
+
+</style>
+<div>
+    {% if df %}
+    {{df | safe}}
+    {% endif %}
+</div>
+
+<div>
+    {% if fig %}
+    <img src='../../media/{{fig}}'>
+    {% endif %}
+</div>
+
+<form method="POST">
+<!--    <label>Test model with custom input: </label>-->
+<!--    <button type="submit" name="test_model" class="btn btn-primary btn-sm">Test model</button>-->
+    <br>
+    <label>Click here to save the model: </label>
+    <a type="submit" name="save_model" class="btn btn-primary btn-sm" href="{% url 'save_model' %}">Save model</a>
+
+</form>
+{% endblock %}

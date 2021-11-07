@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <input type="text" class="form-control" id="project_name"
+                   name="project_name" placeholder="Enter project name" required>
+        </div>
+        <button type="submit" name="save_model" class="btn btn-primary btn-sm">Save model</button>
+    </form>
+</div>
+{% endblock %}

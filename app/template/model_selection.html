@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<form method="POST">
+    {% csrf_token %}
+    <div>
+        <label for="model">Choose a model:</label>
+        <select id="model" name="model_name">
+            {% for model in model_name_list %}
+            <option value="{{model}}">{{model}}</option>
+            {% endfor %}
+        </select>
+
+        <!--        ---------------------------------------------------------------------------->
+        <div id="showdivid" style="display:none;">
+            {% if lr %}
+
+            <label>{{lr}} </label>
+            {% endif %}
+
+        </div>
+
+        <!--        ---------------------------------------------------------------------------->
+
+        <br>
+        <button type="submit" class="btn btn-primary btn-sm" value="MODEL TRAINING">MODEL TRAINING</button>
+        {% if actual_pred_df %}
+        <button type="submit" name="evaluation" class="btn btn-primary btn-sm" value="evaluation">MODEL EVALUATION
+        </button>
+        {% endif %}
+    </div>
+    <div>
+        {% if actual_pred_df %}
+        {{actual_pred_df | safe}}
+        {% endif %}
+    </div>
+</form>
+
+
+{% endblock %}
+
+{% block script %}
+<script>
+$(document).ready(function(){
+    url = '/model_selection/';
+    $('select#model').change(function(){
+        $('#showdivid').show();
+        data = $(this).val();
+        console.log('data', data)
+        $.ajax({
+            url: url,
+            data: {'data': data},
+            success: function(res){
+                console.log('result', res);
+            },
+            error: function(err){
+                console.log('error', err);
+            },
+        });
+    });
+});
+
+</script>
+{% endblock script %}

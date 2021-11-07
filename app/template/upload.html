@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- MESSAGE -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
+        <strong>
+            {{message}}
+        </strong>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+<form method="post" enctype="multipart/form-data" action="/upload/">
+    {% csrf_token %}
+    <div class="form-group">
+            <input type="file" name="myFile" class="form-control" required accept=".csv">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Upload</button>
+</form>
+
+{% endblock %}

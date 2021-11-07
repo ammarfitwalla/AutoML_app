@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="animated fadeIn text-muted">
+    <h3 class="eda_heading">EXPLORATORY DATA ANALYSIS</h3>
+    <br>
+    <ul>
+
+        <li><label>Your data has <b>{{ df_n_rows }} rows</b> and <b>{{ df_n_cols }} columns</b> </label></li>
+        <br>
+        <li><label>The column names are: </label>
+            {% for col in df_cols %}
+            <label><h5><b>{{col}}, </b></h5></label>
+            {% endfor %}
+        </li>
+        <br>
+        <li><h5>Below table shows first 5 rows your data</h5>
+            {% if df_html %}
+            <div>
+                {{df_html | safe}}
+            </div>
+            {% endif %}
+        </li>
+        <br>
+        {% ifequal df_null False %}
+        <li><label><h5>There are no NULL values in your data</h5></label></li>
+        {% else %}
+        <li><label><h5>There are NULL values in your data</h5></label></li>
+
+        {% endifequal %}
+        <br>
+
+        <li><h5>Below table displays short description about your data</h5>
+            {% if df_describe_html %}
+            <div>
+                {{df_describe_html | safe}}
+            </div>
+            {% endif %}
+        </li>
+        <br>
+    </ul>
+
+    <div class="container" style="float:left;">
+        {% for graph in png_files_path %}
+        {% if png_files_path %}
+        <div class="imgContainer" style="float:centre;">
+            <img src="../../media/{{graph}}" style="width:50%">
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!--------------------------------- PREPROCESSING --------------------------------->
+
+    <h3 class="eda_heading">DATA PREPROCESSING</h3>
+    <br><br>
+
+    <!--------------------------------- TARGET COLUMN --------------------------------->
+
+    <form method="POST">
+        {% csrf_token %}
+        <label>Please select the column you want to predict : </label>
+        <!--    <ul id="id_response">-->
+        <!--        <li>-->
+        <!--                {% for col in df_cols %}-->
+        <!--            <label for="id_response_0">-->
+        <!--                <input type="radio" name="response" value='{{ forloop.counter0 }}' required="" id="id_response_0">-->
+        <!--                {{col}}-->
+        <!--            </label>-->
+        <!--            {% endfor %}-->
+        <!--        </li>-->
+        <!--    </ul>-->
+        <select id="dep_var" name="dep_var_name">
+            {% for col in df_cols %}
+            <option value="{{col}}" name="response">{{col}}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <br>
+
+        <!--------------------------------- DROPPING COLUMNS --------------------------------->
+
+        <div class="multiselect">
+            <div class="selectBox" onclick="showCheckboxes()">
+                <label>Select the columns you want to drop: </label>
+                <select>
+                    <option>Select columns</option>
+                </select>
+                <div class="overSelect"></div>
+            </div>
+            <div id="checkboxes">
+                {% for col in df_cols %}
+                <label for="{{ forloop.counter0 }}">
+                    <input type="checkbox" value="{{col}}" name="checkbox_name"
+                           id="{{ forloop.counter0 }}"/>{{col}}</label>
+                {% endfor %}
+            </div>
+        </div>
+        <br>
+
+        <!--------------------------------- HANDLE NAN VALUES --------------------------------->
+
+        <label>Please select how you want to handle NAN Values in columns</label>
+        <div>
+
+            {% if string_cols %}
+                {% for str_col in string_cols %}
+                    <label><b>{{ str_col }}</b></label>
+                        {% for str_way in list_handle_nan_str_values %}
+                            <div>
+                                <input type="radio" id="{{str_way}}" name="{{str_col}}" value="{{str_way}}" required>
+                                <label for="{{str_way}}">{{str_way}}</label><br>
+                            </div>
+                        {% endfor %}
+                {% endfor %}
+            {% endif %}
+
+            {% if nan_columns %}
+                {% for null_column in nan_columns %}
+            <span><b>{{ null_column }}</b></span>
+                        {% for way in list_handle_nan_values %}
+                            <div>
+                                <input type="radio" id="{{way}}" name="{{null_column}}" value="{{way}}" required>
+                                <label for="{{way}}">{{way}}</label><br>
+                            </div>
+                        {% endfor %}
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <br>
+        <!--------------------------------- TRAIN TEST SPLIT --------------------------------->
+
+
+        <div class="slidecontainer">
+            <div id="train_ratio" class="value">70 %</div>
+            <label>Train and Test split ratio: </label>
+            <input type="range" min="1" max="99" value="70" name="slider_value" class="slider" id="myRange">
+            <br>
+            <br>
+            <!--        <p>Train: <span id="train_ratio"></span></p>-->
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">choose model</button>
+        <br>
+        <br>
+    </form>
+
+    <script>
+var slider = document.getElementById("myRange");
+var train_ratio = document.getElementById("train_ratio");
+train_ratio.innerHTML = slider.value + " %";
+
+slider.oninput = function() {
+train_ratio.innerHTML = this.value + " %";
+}
+
+
+var expanded = false;
+
+function showCheckboxes() {
+  var checkboxes = document.getElementById("checkboxes");
+  if (!expanded) {
+    checkboxes.style.display = "block";
+    expanded = true;
+  } else {
+    checkboxes.style.display = "none";
+    expanded = false;
+  }
+}
+
+
+
+    </script>
+</div>
+{% if messages %}
+{% for message in messages %}
+<style xmlns="http://www.w3.org/1999/html">
+.multiselect {
+  width: 200px;
+}
+
+.selectBox {
+  position: relative;
+}
+
+.selectBox select {
+  width: 100%;
+  font-weight: bold;
+}
+
+.overSelect {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+#checkboxes {
+  display: none;
+  border: 1px #dadada solid;
+}
+
+#checkboxes label {
+  display: block;
+}
+
+#checkboxes label:hover {
+  background-color: #1e90ff;
+}
+
+.eda_heading{
+color: black;
+font-family: Didot, serif;
+font-size: 30px;
+font-weight: bold;
+margin-top: 0px;
+margin-bottom: 1px;
+text-align: center;
+}
+label{
+font-size:20px;
+}
+select {
+        padding: 5px 35px 5px 5px;
+        font-size: 15px;
+        border: 2px solid #ccc;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+.value {
+  border-bottom: 4px dashed #bdc3c7;
+  text-align: center;
+  font-weight: bold;
+  font-size: 4em;
+  width: 300px;
+  height: 100px;
+  line-height: 60px;
+  margin: 20px auto;
+  letter-spacing: -.07em;
+  text-shadow: white 2px 2px 2px;
+}
+input[type="range"] {
+  display: block;
+  -webkit-appearance: none;
+  background-color: #bdc3c7;
+  width: 300px;
+  height: 5px;
+  border-radius: 5px;
+  margin: 0 auto;
+  outline: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  background-color: #e74c3c;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid white;
+  cursor: pointer;
+  transition: .3s ease-in-out;
+}​
+  input[type="range"]::-webkit-slider-thumb:hover {
+    background-color: white;
+    border: 2px solid #e74c3c;
+  }
+  input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(1.6);
+  }
+
+
+
+
+</style>
+{% endfor %}
+{% endif %}
+<div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
+    <strong>
+        {{message}}
+    </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endblock %}
+

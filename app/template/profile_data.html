@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- MESSAGE -->
+{% if messages %}
+{% for message in messages %}
+<div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
+    <strong>
+        {{message}}
+    </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div>
+    <form method="POST">
+        {% csrf_token %}
+
+        {% if document_project_name %}
+
+            {% for doc_name, project_name in document_project_name %}
+<!--            <h4>Document name : {{doc_name}}</h4>-->
+            <h4>Project : {{project_name}}</h4>
+
+            <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{ forloop.counter0 }}">Test Model</button>
+            {% endfor %}
+
+        {% else %}
+            <h3>There are no saved data</h3>
+        {% endif %}
+
+    </form>
+</div>
+
+{% endblock %}

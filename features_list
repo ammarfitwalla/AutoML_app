@@ -1,0 +1,8 @@
+features to be added in ML App:
+-------------------------------
+1. model parameter selection ....                            - DONE
+2. inferencing page / saving model ....                    - DONE
+3. rendering graphs on html ....                              - DONE
+4. one hot enconding
+5. nan/null values handling
+6. Fix UI/UX
