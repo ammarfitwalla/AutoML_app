@@ -1,9 +1,9 @@
 import base64
 import numpy as np
-import seaborn as sns
 from io import BytesIO
 from flaml import AutoML
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import category_encoders as ce
 from django.conf import settings
 from django.contrib import messages
-from django.http import JsonResponse
+import seaborn as sns
 from django.utils.text import get_valid_filename
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -23,8 +23,7 @@ val = None
 model_value = None
 uploaded_file_url = None
 get_selected_project = None
-custom_model_type = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier',
-                     'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
+custom_model_type = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
 automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
 numerical_model_name_list = ['Linear Regression']
 media_path = settings.MEDIA_ROOT
@@ -72,9 +71,7 @@ def sign_up(request):
         user = User.objects.create_user(username, email, password)
         user.save()
 
-        custom_user = Profile(
-            user=user
-        )
+        custom_user = Profile(user=user)
         custom_user.save()
         messages.success(request, 'account created, please login here')
         return redirect('/signin/')
@@ -119,8 +116,7 @@ def upload(request):
         if os.path.splitext(myFile.name)[-1] == ".csv":
             # fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'documents/user_' + user),
             #                        base_url='documents/')
-            fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep),
-                                   base_url=media_path + os.sep + 'documents' + os.sep)
+            fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep), base_url=media_path + os.sep + 'documents' + os.sep)
             myFile.name = get_valid_filename(myFile.name)
             filename = fs.save(myFile.name, myFile)
             uploaded_file_url = fs.url(filename)
@@ -162,11 +158,13 @@ def eda(request):
 
             all_categorical = [col for col in df.columns if df[col].nunique() < 15]
             # print("all_categorical", all_categorical)
-            object_categorical = [col for col in df.columns if
-                                  df[col].dtype == 'O' and df[col].nunique() < 15]
+            object_categorical = [col for col in df.columns if df[col].dtype == 'O' and df[col].nunique() < 15]
 
             png_files_path = []
+
             folder = os.path.join(settings.MEDIA_ROOT, str(user), 'graphs')
+            if not os.path.isdir(folder):
+                os.mkdir(folder)
 
             a4_dims = (11.7, 8.27)
             for i in all_categorical:
@@ -194,14 +192,7 @@ def eda(request):
 
                 return redirect('/data_preprocessing/')
 
-            context = {
-                'df_html': df_html,
-                'df_n_rows': df_n_rows,
-                'df_n_cols': df_n_cols,
-                'df_cols': df_cols,
-                'df_describe_html': df_describe_html,
-                'png_files_path': png_files_path,
-            }
+            context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols, 'df_describe_html': df_describe_html, 'png_files_path': png_files_path, }
             return render(request, "eda.html", context)
         else:
             return redirect('/upload/')
@@ -271,8 +262,7 @@ def data_preprocessing(request):
             global val
 
             def val():
-                return [df_preprocessing, dependent_variable, str(df_preprocessing.dtypes[dependent_variable]),
-                        test_size_ratio]
+                return [df_preprocessing, dependent_variable, str(df_preprocessing.dtypes[dependent_variable]), test_size_ratio]
 
             return redirect('/model_selection/')
         elif df_col_numbers - len(selected_check_list) <= 1:
@@ -280,14 +270,7 @@ def data_preprocessing(request):
         else:
             messages.error(request, 'You cannot delete prediction column')
 
-    context = {
-        'df_null': df_null,
-        'nan_columns': df_null_columns,
-        'string_cols': string_cols,
-        'list_handle_nan_values': list_to_handle_nan_values,
-        'list_handle_nan_str_values': list_to_handle_nan_str_values,
-        'df_cols': df_col_names,
-    }
+    context = {'df_null': df_null, 'nan_columns': df_null_columns, 'string_cols': string_cols, 'list_handle_nan_values': list_to_handle_nan_values, 'list_handle_nan_str_values': list_to_handle_nan_str_values, 'df_cols': df_col_names, }
     return render(request, 'data_preprocessing.html', context)
 
 
@@ -311,10 +294,7 @@ def model_selection(request):
     X = df_model.drop([dependent_variable], axis=1)
     y = df_model[dependent_variable]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                        test_size=test_size_ratio,
-                                                        random_state=77,
-                                                        shuffle=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_ratio, random_state=77, shuffle=True)
     p_X_train = X_train.copy()
     p_X_test = X_test.copy()
 
@@ -372,10 +352,7 @@ def model_selection(request):
             actual_pred_df['Predicted output'] = filtered_predictions[-1][-1]
             actual_pred_df = actual_pred_df.to_html(classes="table table-striped table-hover", index=False)
 
-            context = {
-                'actual_pred_df': actual_pred_df,
-                'model_name_list': automl_model_type + custom_model_type
-            }
+            context = {'actual_pred_df': actual_pred_df, 'model_name_list': automl_model_type + custom_model_type}
 
             return render(request, 'model_selection.html', context)
         else:
@@ -387,18 +364,13 @@ def model_selection(request):
             filtered_model = [i for i in all_model if i[0] == user]
 
             def model_value():
-                return [used_model_name[-1][-1], filtered_model[-1][-1], X_train, X_test, y_train, y_test,
-                        filtered_predictions[-1][-1], df_model, X, y, filtered_selected_model[-1][-1]]
+                return [used_model_name[-1][-1], filtered_model[-1][-1], X_train, X_test, y_train, y_test, filtered_predictions[-1][-1], df_model, X, y, filtered_selected_model[-1][-1]]
 
             return redirect('/model_evaluation/')
 
-    context = {
-        'model_name_list': automl_model_type + custom_model_type
-    }
+    context = {'model_name_list': automl_model_type + custom_model_type}
 
-    return render(request, 'model_selection.html', context)
-    # except:
-    #     return redirect('/eda/')
+    return render(request, 'model_selection.html', context)  # except:  #     return redirect('/eda/')
 
 
 @decorators.login_required
@@ -429,8 +401,7 @@ def model_evaluation(request):
         # my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse],
         #            ['Root Mean Squared Error', rmse], ['Model Score', model_score]]
 
-        my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse],
-                   ['Root Mean Squared Error', rmse]]
+        my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse], ['Root Mean Squared Error', rmse]]
 
         plt.scatter(y_test, y_pred, c='crimson')
         plt.yscale('log')
@@ -468,19 +439,14 @@ def model_evaluation(request):
         f1 = '%.2f' % (metrics.f1_score(y_test, y_pred) * 100) + ' %'
         precision = '%.2f' % (metrics.precision_score(y_test, y_pred) * 100) + ' %'
 
-        my_data = [['Model', model_name], ['Accuracy Score', accuracy], ['Recall Score', recall], ['F1 score', f1],
-                   ['Precision', precision]]
+        my_data = [['Model', model_name], ['Accuracy Score', accuracy], ['Recall Score', recall], ['F1 score', f1], ['Precision', precision]]
 
         png_file_name_ = None
 
     df_ev = pd.DataFrame(my_data, columns=['Metrics', 'Values'])
     df_to_html = df_ev.to_html(classes="table table-striped table-hover", index=False)
 
-    context = {
-        'model_name': model_name,
-        'df': df_to_html,
-        'fig': png_file_name_,
-    }
+    context = {'model_name': model_name, 'df': df_to_html, 'fig': png_file_name_, }
     return render(request, 'model_evaluation.html', context)
 
 
@@ -513,14 +479,7 @@ def save_model(request):
             # ============ creating an instance for trained model to be saved ============ #
             doc_instance = Document.objects.get(id=last_doc_id)
 
-            data = TrainedModels(
-                document=doc_instance,
-                project_name=project_name,
-                model_file=pickle_file,
-                column_names=X_cols,
-                model_name=model_name,
-                model_type=used_model_type,
-            )
+            data = TrainedModels(document=doc_instance, project_name=project_name, model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type, )
             data.save()
             messages.success(request, 'Your Project has been saved successfully !')
 
@@ -563,13 +522,9 @@ def profile_data(request):
             # print('projects_name_list')
             # print(projects_name_list)
             # print("-----------------------------------------------")
-            context = {
-                'document_project_name': zip(docs_name_list, projects_name_list),
-            }
+            context = {'document_project_name': zip(docs_name_list, projects_name_list), }
         else:
-            context = {
-                'document_project_name': None,
-            }
+            context = {'document_project_name': None, }
         return render(request, 'profile_data.html', context)
 
     else:
@@ -614,12 +569,7 @@ def model_testing(request):
             # print("custom_predictions", custom_predictions)
             df_test = pd.DataFrame(test_data)
             df_test = df_test.to_html(classes="table table-striped table-hover", index=False)
-        context = {
-            'model_name': model_name,
-            'predictions': df_test,
-            'col': col_names,
-            'project_name': project_name
-        }
+        context = {'model_name': model_name, 'predictions': df_test, 'col': col_names, 'project_name': project_name}
         return render(request, 'model_testing.html', context)
     else:
         return redirect('/signin/')
