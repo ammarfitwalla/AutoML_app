@@ -258,7 +258,7 @@ def data_preprocessing(request):
 
         # print("=================================")
         # print(df_preprocessing.shape)
-        df_preprocessing.to_csv('check_fixed_nan.csv')
+        # df_preprocessing.to_csv('check_fixed_nan.csv')
         # print("test_size_ratio:", test_size_ratio)
         selected_check_list = request.POST.getlist('checkbox_name')
         # print("selected_check_list: ", type(selected_check_list))
