@@ -465,9 +465,7 @@ def save_model(request):
 
             # ============ Saving document path with user id ============ #
             file_path = os.path.join(media_path, str(user_id), 'documents')
-            print(file_path)
             list_of_files = glob.glob(file_path + os.sep + '*')
-            print(list_of_files)
             file_name = max(list_of_files, key=os.path.getmtime)
             doc_id = Document(user_id=user.id, document=file_name)
             doc_id.save()
