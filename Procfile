@@ -1,3 +1,1 @@
-web: gunicorn ml_playground.wsgi --log-file - --log-level debug
-python manage.py collectstatic --noinput
-manage.py migrate
+web: gunicorn website.wsgi --log-file -
