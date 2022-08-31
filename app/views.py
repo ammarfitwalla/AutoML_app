@@ -1,3 +1,4 @@
+import glob
 import os
 import pickle
 import chardet
@@ -21,7 +22,6 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 val = None
 model_value = None
-uploaded_file_url = None
 get_selected_project = None
 custom_model_type = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
 automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
@@ -103,7 +103,6 @@ def logout_page(request):
 
 @decorators.login_required
 def upload(request):
-    global uploaded_file_url
     if not request.user.is_authenticated:
         return redirect('login')
 
@@ -112,14 +111,15 @@ def upload(request):
         if not os.path.isdir(os.path.join(media_path, user)):
             os.mkdir(os.path.join(media_path, user))
 
+        if not os.path.isdir(os.path.join(media_path, user, 'documents')):
+            os.mkdir(os.path.join(media_path, user, 'documents'))
+
         myFile = request.FILES.get('myFile')
         if os.path.splitext(myFile.name)[-1] == ".csv":
-            # fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'documents/user_' + user),
-            #                        base_url='documents/')
-            fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep), base_url=media_path + os.sep + 'documents' + os.sep)
+            fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep))
             myFile.name = get_valid_filename(myFile.name)
-            filename = fs.save(myFile.name, myFile)
-            uploaded_file_url = fs.url(filename)
+            fs.save(myFile.name, myFile)
+            # uploaded_file_url = fs.url(filename)
             messages.success(request, 'File Uploaded')
 
             return redirect('/eda/')
@@ -132,70 +132,66 @@ def upload(request):
 
 @decorators.login_required
 def eda(request):
-    global uploaded_file_url, eda_val
+    global eda_val
     user = request.user.id
-    # print('USER', user)
 
     if user is not None:
-        # all_data = Document.objects.filter(user_id=user).values('document')
-        if uploaded_file_url:
-            # print(os.path.join(media_path, str(user), 'documents', str(uploaded_file_url)))
-            file_name = os.path.join(media_path, str(user), 'documents', str(uploaded_file_url))
-            with open(file_name, 'rb') as rawdata:
-                result = chardet.detect(rawdata.read(10000))
+        file_path = os.path.join(media_path, str(user), 'documents')
+        list_of_files = glob.glob(file_path+os.sep+'*')
+        file_name = max(list_of_files, key=os.path.getmtime)
+        with open(file_name, 'rb') as rawdata:
+            result = chardet.detect(rawdata.read(10000))
 
-            df = pd.read_csv(file_name, encoding=result['encoding'])
-            df_html = df.head().to_html(classes="table table-striped", index=False)
-            df_n_rows = df.shape[0]
-            df_n_cols = df.shape[1]
-            df_cols = [column for column in df.columns]
-            df_describe = df.describe()
-            df_describe_html = df_describe.to_html(classes="table table-striped")
-            # all_categorical = [col for col in df.columns if df[col].nunique() < df.shape[0] // 5]
-            # print("all_categorical", all_categorical)
-            # object_categorical = [col for col in df.columns if
-            #                       df[col].dtype == 'O' and df[col].nunique() < df.shape[0] // 5]
+        df = pd.read_csv(file_name, encoding=result['encoding'])
+        df_html = df.head().to_html(classes="table table-striped", index=False)
+        df_n_rows = df.shape[0]
+        df_n_cols = df.shape[1]
+        df_cols = [column for column in df.columns]
+        df_describe = df.describe()
+        df_describe_html = df_describe.to_html(classes="table table-striped")
+        # all_categorical = [col for col in df.columns if df[col].nunique() < df.shape[0] // 5]
+        # print("all_categorical", all_categorical)
+        # object_categorical = [col for col in df.columns if
+        #                       df[col].dtype == 'O' and df[col].nunique() < df.shape[0] // 5]
 
-            all_categorical = [col for col in df.columns if df[col].nunique() < 15]
-            # print("all_categorical", all_categorical)
-            object_categorical = [col for col in df.columns if df[col].dtype == 'O' and df[col].nunique() < 15]
+        all_categorical = [col for col in df.columns if df[col].nunique() < 15]
+        # print("all_categorical", all_categorical)
+        object_categorical = [col for col in df.columns if df[col].dtype == 'O' and df[col].nunique() < 15]
 
-            png_files_path = []
+        png_files_path = []
 
-            folder = os.path.join(settings.MEDIA_ROOT, str(user), 'graphs')
-            if not os.path.isdir(folder):
-                os.mkdir(folder)
+        folder = os.path.join(settings.MEDIA_ROOT, str(user), 'graphs')
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
 
-            a4_dims = (11.7, 8.27)
-            for i in all_categorical:
-                plt.subplots(figsize=a4_dims)
-                png_file_name = folder + os.sep + i + ".png"
-                sns.countplot(x=df[i], data=df)
-                plt.axis()
-                plt.savefig(png_file_name)
-                plt.close()
-                png_files_path.append(png_file_name)
-            # print(png_files_path)
+        a4_dims = (11.7, 8.27)
+        for i in all_categorical:
+            plt.subplots(figsize=a4_dims)
+            png_file_name = folder + os.sep + i + ".png"
+            sns.countplot(x=df[i], data=df)
+            plt.axis()
+            plt.savefig(png_file_name)
+            plt.close()
+            png_files_path.append(png_file_name)
+        # print(png_files_path)
 
-            data_corr = df.corr()
-            f, ax = plt.subplots(figsize=a4_dims)
-            # sns.heatmap(data_corr, cmap='viridis', annot=True)
-            sns.heatmap(data_corr, cmap='Blues', annot=True)
-            plt.title("Correlation between features", weight='bold', fontsize=15)
-            correlation_name = f'{folder}{os.sep}correlation_123456789.png'
-            plt.savefig(correlation_name)
-            png_files_path.append(correlation_name)
+        data_corr = df.corr()
+        f, ax = plt.subplots(figsize=a4_dims)
+        # sns.heatmap(data_corr, cmap='viridis', annot=True)
+        sns.heatmap(data_corr, cmap='Blues', annot=True)
+        plt.title("Correlation between features", weight='bold', fontsize=15)
+        correlation_name = f'{folder}{os.sep}correlation_123456789.png'
+        plt.savefig(correlation_name)
+        png_files_path.append(correlation_name)
 
-            if request.method == 'POST':
-                def eda_val():
-                    return [df, df_n_cols, df_cols, object_categorical]
+        if request.method == 'POST':
+            def eda_val():
+                return [df, df_n_cols, df_cols, object_categorical]
 
-                return redirect('/data_preprocessing/')
+            return redirect('/data_preprocessing/')
 
-            context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols, 'df_describe_html': df_describe_html, 'png_files_path': png_files_path, }
-            return render(request, "eda.html", context)
-        else:
-            return redirect('/upload/')
+        context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols, 'df_describe_html': df_describe_html, 'png_files_path': png_files_path, }
+        return render(request, "eda.html", context)
     else:
         return redirect('/signin/')
 
@@ -452,8 +448,8 @@ def model_evaluation(request):
 
 @decorators.login_required
 def save_model(request):
-    user = request.user.id
-    user = User.objects.get(id=user)
+    user_id = request.user.id
+    user = User.objects.get(id=user_id)
     if user:
         model_attributes = model_value()
         model = model_attributes[1]
@@ -468,7 +464,12 @@ def save_model(request):
             pickle_file = pickle.dumps(model)
 
             # ============ Saving document path with user id ============ #
-            doc_id = Document(user_id=user.id, document=uploaded_file_url)
+            file_path = os.path.join(media_path, str(user_id), 'documents')
+            print(file_path)
+            list_of_files = glob.glob(file_path + os.sep + '*')
+            print(list_of_files)
+            file_name = max(list_of_files, key=os.path.getmtime)
+            doc_id = Document(user_id=user.id, document=file_name)
             doc_id.save()
 
             # ============ filtering docs with user id and uploaded doc name ============ #
