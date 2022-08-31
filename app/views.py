@@ -108,9 +108,10 @@ def upload(request):
 
     elif request.method == 'POST':
         user = str(request.user.id)
-        if not os.path.isdir(os.path.join(media_path, user)):
-            os.mkdir(os.path.join(media_path, user))
-
+        # if not os.path.isdir(os.path.join(media_path, user)):
+        #     os.mkdir(os.path.join(media_path, user))
+        if not os.path.isdir(os.path.join('../media', user)):
+            os.mkdir(os.path.join('../media', user))
         if not os.path.isdir(os.path.join(media_path, user, 'documents')):
             os.mkdir(os.path.join(media_path, user, 'documents'))
 
