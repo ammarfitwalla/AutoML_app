@@ -7,6 +7,7 @@ import numpy as np
 from app.models import *
 from sklearn import metrics
 import matplotlib.pyplot as plt
+import category_encoders as ce
 from django.conf import settings
 from django.contrib import messages
 from django.http import JsonResponse
@@ -20,14 +21,18 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 val = None
 model_value = None
-model = None
-predictions = None
-classifier = False
 uploaded_file_url = None
 get_selected_project = None
-used_model = []
-model_type = ['Regression', 'Classification']
+custom_model_type = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier',
+                     'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
+automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
+numerical_model_name_list = ['Linear Regression']
 media_path = settings.MEDIA_ROOT
+eda_val = None
+all_model = []
+predictions = []
+used_model = []
+selected_model_type = []
 
 sc_X = StandardScaler()
 
@@ -101,7 +106,7 @@ def logout_page(request):
 
 @decorators.login_required
 def upload(request):
-    global uploaded_file_url, doc_path
+    global uploaded_file_url
     if not request.user.is_authenticated:
         return redirect('login')
 
@@ -129,109 +134,73 @@ def upload(request):
     return render(request, 'upload.html')
 
 
+@decorators.login_required
 def eda(request):
-    global uploaded_file_url, doc_path
+    global uploaded_file_url, eda_val
     user = request.user.id
-    print('USER', user)
+    # print('USER', user)
 
     if user is not None:
         # all_data = Document.objects.filter(user_id=user).values('document')
         if uploaded_file_url:
-            print(os.path.join(media_path, str(user), 'documents', str(uploaded_file_url)))
+            # print(os.path.join(media_path, str(user), 'documents', str(uploaded_file_url)))
             file_name = os.path.join(media_path, str(user), 'documents', str(uploaded_file_url))
             with open(file_name, 'rb') as rawdata:
                 result = chardet.detect(rawdata.read(10000))
-            # print(result)
 
             df = pd.read_csv(file_name, encoding=result['encoding'])
-            df_html = df.head().to_html(classes="table table-striped")
+            df_html = df.head().to_html(classes="table table-striped", index=False)
             df_n_rows = df.shape[0]
             df_n_cols = df.shape[1]
             df_cols = [column for column in df.columns]
-            df_null = df.isnull().values.any()
-            df_null_columns = None
-            string_cols = None
-            all_null_columns = None
             df_describe = df.describe()
             df_describe_html = df_describe.to_html(classes="table table-striped")
-            categorical = [col for col in df.columns if df[col].dtype == 'O' and df[col].nunique() < df.shape[0] // 2]
-            # categorical = [col for col in df.columns if df[col].nunique() > df.shape[0]/2]
-            list_to_handle_nan_values = ['mean', 'median', 'bfill', 'ffill', 0, 'delete records']
-            list_to_handle_nan_str_values = ['bfill', 'ffill', 0, 'delete records']
+            # all_categorical = [col for col in df.columns if df[col].nunique() < df.shape[0] // 5]
+            # print("all_categorical", all_categorical)
+            # object_categorical = [col for col in df.columns if
+            #                       df[col].dtype == 'O' and df[col].nunique() < df.shape[0] // 5]
 
-            if df_null:
-                df_null_columns, string_cols = [], []
-                all_null_columns = df.columns[df.isna().any()].tolist()
-
-                for i in all_null_columns:
-                    if is_string_dtype(df[i]):
-                        string_cols.append(i)
-                    else:
-                        df_null_columns.append(i)
+            all_categorical = [col for col in df.columns if df[col].nunique() < 15]
+            # print("all_categorical", all_categorical)
+            object_categorical = [col for col in df.columns if
+                                  df[col].dtype == 'O' and df[col].nunique() < 15]
 
             png_files_path = []
             folder = os.path.join(settings.MEDIA_ROOT, str(user), 'graphs')
-            for i in categorical:
+
+            a4_dims = (11.7, 8.27)
+            for i in all_categorical:
+                plt.subplots(figsize=a4_dims)
                 png_file_name = folder + os.sep + i + ".png"
                 sns.countplot(x=df[i], data=df)
+                plt.axis()
                 plt.savefig(png_file_name)
+                plt.close()
                 png_files_path.append(png_file_name)
-            print(png_files_path)
+            # print(png_files_path)
+
+            data_corr = df.corr()
+            f, ax = plt.subplots(figsize=a4_dims)
+            # sns.heatmap(data_corr, cmap='viridis', annot=True)
+            sns.heatmap(data_corr, cmap='Blues', annot=True)
+            plt.title("Correlation between features", weight='bold', fontsize=15)
+            correlation_name = f'{folder}{os.sep}correlation_123456789.png'
+            plt.savefig(correlation_name)
+            png_files_path.append(correlation_name)
 
             if request.method == 'POST':
-                dependent_variable = request.POST['dep_var_name']
-                slider_value = request.POST['slider_value']
-                test_size_ratio = (100 - int(slider_value)) / 100
-                print(df.shape)
-                if df_null:
-                    print("=================================")
-                    for i in all_null_columns:
-                        way = request.POST.get(i)
-                        print(way)
-                        if way == '0':
-                            df[i] = df[i].fillna(0)
-                        elif way == 'bfill' or way == 'ffill':
-                            df[i] = df[i].fillna(method=way)
-                        elif way == 'delete records':
-                            df.dropna(subset=[i], inplace=True)
-                        elif way == 'mean':
-                            df[i] = df[i].fillna((df[i].mean()))
-                        elif way == 'median':
-                            df[i] = df[i].fillna((df[i].median()))
+                def eda_val():
+                    return [df, df_n_cols, df_cols, object_categorical]
 
-                print("=================================")
-                print(df.shape)
-                df.to_csv('check_fixed_nan.csv')
-                # print("test_size_ratio:", test_size_ratio)
-                selected_check_list = request.POST.getlist('checkbox_name')
-                # print("selected_check_list: ", type(selected_check_list))
-                if dependent_variable not in selected_check_list and df_n_cols - len(selected_check_list) > 1:
-                    df = df.drop(selected_check_list, axis=1)
-                    global val
-
-                    def val():
-                        return [df, dependent_variable, str(df.dtypes[dependent_variable]), test_size_ratio]
-
-                    return redirect('/model_selection/')
-                elif df_n_cols - len(selected_check_list) <= 1:
-                    messages.error(request, 'You cannot delete all the columns')
-                else:
-                    messages.error(request, 'You cannot delete prediction column')
-
-                return redirect('/eda/')
+                return redirect('/data_preprocessing/')
 
             context = {
                 'df_html': df_html,
                 'df_n_rows': df_n_rows,
                 'df_n_cols': df_n_cols,
                 'df_cols': df_cols,
-                'df_null': df_null,
                 'df_describe_html': df_describe_html,
                 'png_files_path': png_files_path,
-                'nan_columns': df_null_columns,
-                'string_cols': string_cols,
-                'list_handle_nan_values': list_to_handle_nan_values,
-                'list_handle_nan_str_values': list_to_handle_nan_str_values
             }
             return render(request, "eda.html", context)
         else:
@@ -240,14 +209,96 @@ def eda(request):
         return redirect('/signin/')
 
 
+@decorators.login_required
 def data_preprocessing(request):
-    pass
+    global eda_val
+    eda_values = eda_val()
+    df_preprocessing = eda_values[0]
+    df_col_numbers = eda_values[1]
+    df_col_names = eda_values[2]
+    categorical_col_names = eda_values[3]
+    df_null = df_preprocessing.isnull().values.any()
+    df_null_columns = None
+    all_null_columns = None
+    string_cols = None
+    list_to_handle_nan_values = ['mean', 'median', 'bfill', 'ffill', 0, 'delete records']
+    list_to_handle_nan_str_values = ['bfill', 'ffill', 0, 'delete records']
 
+    if df_null:
+        df_null_columns, string_cols = [], []
+        all_null_columns = df_preprocessing.columns[df_preprocessing.isna().any()].tolist()
+
+        for i in all_null_columns:
+            if is_string_dtype(df_preprocessing[i]):
+                string_cols.append(i)
+            else:
+                df_null_columns.append(i)
+
+    if request.method == 'POST':
+        dependent_variable = request.POST['dep_var_name']
+        slider_value = request.POST['slider_value']
+        test_size_ratio = (100 - int(slider_value)) / 100
+        # print(df_preprocessing.shape)
+
+        if df_null:
+            # print("=================================")
+            for i in all_null_columns:
+                way = request.POST.get(i)
+                # print(way)
+                if way == '0':
+                    df_preprocessing[i] = df_preprocessing[i].fillna(0)
+                elif way == 'bfill' or way == 'ffill':
+                    df_preprocessing[i] = df_preprocessing[i].fillna(method=way)
+                elif way == 'delete records':
+                    df_preprocessing.dropna(subset=[i], inplace=True)
+                elif way == 'mean':
+                    df_preprocessing[i] = df_preprocessing[i].fillna((df_preprocessing[i].mean()))
+                elif way == 'median':
+                    df_preprocessing[i] = df_preprocessing[i].fillna((df_preprocessing[i].median()))
+
+        # print("=================================")
+        # print(df_preprocessing.shape)
+        df_preprocessing.to_csv('check_fixed_nan.csv')
+        # print("test_size_ratio:", test_size_ratio)
+        selected_check_list = request.POST.getlist('checkbox_name')
+        # print("selected_check_list: ", type(selected_check_list))
+
+        oh_encoder = ce.OrdinalEncoder(cols=categorical_col_names)
+        df_preprocessing = oh_encoder.fit_transform(df_preprocessing)
+
+        if dependent_variable not in selected_check_list and df_col_numbers - len(selected_check_list) > 1:
+            df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
+            global val
+
+            def val():
+                return [df_preprocessing, dependent_variable, str(df_preprocessing.dtypes[dependent_variable]),
+                        test_size_ratio]
+
+            return redirect('/model_selection/')
+        elif df_col_numbers - len(selected_check_list) <= 1:
+            messages.error(request, 'You cannot delete all the columns')
+        else:
+            messages.error(request, 'You cannot delete prediction column')
+
+    context = {
+        'df_null': df_null,
+        'nan_columns': df_null_columns,
+        'string_cols': string_cols,
+        'list_handle_nan_values': list_to_handle_nan_values,
+        'list_handle_nan_str_values': list_to_handle_nan_str_values,
+        'df_cols': df_col_names,
+    }
+    return render(request, 'data_preprocessing.html', context)
+
+
+@decorators.login_required
 def model_selection(request):
+    global used_model, predictions
+    user = str(request.user.id)
     # if request.is_ajax():
     #     print('AJAX REQUEST')
     #     data = request.GET.get('data')
-    global model, predictions, classifier
+    classifier = False
     value = val()
     df_model = value[0]
     dependent_variable = value[1]
@@ -272,13 +323,45 @@ def model_selection(request):
         button_name = request.POST.get('evaluation')
 
         if button_name is None:
-            if model_name == 'Classification':
-                X_train = sc_X.fit_transform(X_train)
-                X_test = sc_X.transform(X_test)
-                classifier = True
+            if model_name in automl_model_type:
+                model_name = model_name.split(" ")[-1]
+                if model_name == 'Classification':
+                    X_train = sc_X.fit_transform(X_train)
+                    X_test = sc_X.transform(X_test)
+                    classifier = True
 
-            automl_model_name, model = get_automl_model(model_name.lower(), X_train, y_train)
-            predictions = model.predict(X_test)
+                automl_model_name, model = get_automl_model(model_name.lower(), X_train, y_train)
+                used_model.append([user, automl_model_name])
+
+            else:
+                if model_name in numerical_model_name_list:
+                    model = get_linear_regression_model(X_train, y_train)
+                else:
+                    p_X_train = X_train.copy()
+                    p_X_test = X_test.copy()
+                    X_train = sc_X.fit_transform(X_train)
+                    X_test = sc_X.transform(X_test)
+                    if model_name == 'Logistic Regression':
+                        model = get_logistic_regression_model(X_train, y_train)
+                    elif model_name == 'Decision Tree Classifier':
+                        model = get_decision_tree_classifier_model(X_train, y_train)
+                    elif model_name == 'Random Forest Classifier':
+                        model = get_random_forest_classifier_model(X_train, y_train)
+                    elif model_name == 'GaussianNB':
+                        model = get_gaussian_nb_model(X_train, y_train)
+                    elif model_name == 'SGDClassifier':
+                        model = get_sgd_classifier_model(X_train, y_train)
+                    else:
+                        model = get_kneighbors_classifier_model(X_train, y_train)
+                    classifier = True
+
+                used_model.append([user, model_name])
+
+            selected_model_type.append([user, model_name])
+            predictions.append([user, model.predict(X_test)])
+            filtered_predictions = [i for i in predictions if i[0] == user]
+
+            all_model.append([user, model])
 
             if classifier:
                 X_train = p_X_train
@@ -286,29 +369,31 @@ def model_selection(request):
 
             actual_pred_df = X_test.copy()
             actual_pred_df['Actual output'] = y_test
-            actual_pred_df['Predicted output'] = predictions
-            actual_pred_df = actual_pred_df.to_html(classes="table table-striped table-hover")
+            actual_pred_df['Predicted output'] = filtered_predictions[-1][-1]
+            actual_pred_df = actual_pred_df.to_html(classes="table table-striped table-hover", index=False)
 
             context = {
                 'actual_pred_df': actual_pred_df,
-                'model_name_list': model_type
+                'model_name_list': automl_model_type + custom_model_type
             }
-
-            used_model.append(automl_model_name)
 
             return render(request, 'model_selection.html', context)
         else:
-            print("used_model", used_model)
+            # print("used_model", used_model)
             global model_value
+            used_model_name = [i for i in used_model if i[0] == user]
+            filtered_predictions = [i for i in predictions if i[0] == user]
+            filtered_selected_model = [i for i in selected_model_type if i[0] == user]
+            filtered_model = [i for i in all_model if i[0] == user]
 
             def model_value():
-                return [used_model[-1], model, X_train, X_test, y_train, y_test, predictions, df_model, X, y,
-                        model_name]
+                return [used_model_name[-1][-1], filtered_model[-1][-1], X_train, X_test, y_train, y_test,
+                        filtered_predictions[-1][-1], df_model, X, y, filtered_selected_model[-1][-1]]
 
             return redirect('/model_evaluation/')
 
     context = {
-        'model_name_list': model_type,
+        'model_name_list': automl_model_type + custom_model_type
     }
 
     return render(request, 'model_selection.html', context)
@@ -316,27 +401,36 @@ def model_selection(request):
     #     return redirect('/eda/')
 
 
+@decorators.login_required
 def model_evaluation(request):
+    user = str(request.user.id)
     # try:
     value = model_value()
     model_name = value[0]
     model = value[1]
+    # model = pickle.loads(model)
     X_train = value[2]
     X_test = value[3]
     y_train = value[4]
     y_test = value[5]
     y_pred = value[6]
-    print(y_pred)
+    model_eva_type = value[10]
+    print('model_eva_type', model_eva_type)
 
-    if model_name == 'Regression':
-        folder_ = os.path.join(settings.MEDIA_ROOT, 'regression_plot')
+    if model_eva_type in ['Regression', 'Linear Regression']:
+        folder_ = os.path.join(settings.MEDIA_ROOT, user, 'regression_graphs')
+        if not os.path.isdir(folder_):
+            os.mkdir(folder_)
         png_file_name_ = folder_ + os.sep + "true_vs_predictions.png"
         mae = metrics.mean_absolute_error(y_test, y_pred)
         mse = metrics.mean_squared_error(y_test, y_pred)
         rmse = np.sqrt(metrics.mean_squared_error(y_test, y_pred))
-        model_score = '%.2f' % (model.score(X_test, y_test) * 100) + ' %'
+        # model_score = '%.2f' % (model.score(X_test, y_test) * 100) + ' %'
+        # my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse],
+        #            ['Root Mean Squared Error', rmse], ['Model Score', model_score]]
+
         my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse],
-                   ['Root Mean Squared Error', rmse], ['Model Score', model_score]]
+                   ['Root Mean Squared Error', rmse]]
 
         plt.scatter(y_test, y_pred, c='crimson')
         plt.yscale('log')
@@ -349,6 +443,7 @@ def model_evaluation(request):
         plt.ylabel('Predictions')
         plt.axis('equal')
         plt.savefig(png_file_name_)
+        plt.close()
 
     else:
         # print(model_name)
@@ -379,7 +474,7 @@ def model_evaluation(request):
         png_file_name_ = None
 
     df_ev = pd.DataFrame(my_data, columns=['Metrics', 'Values'])
-    df_to_html = df_ev.to_html(classes="table table-striped table-hover")
+    df_to_html = df_ev.to_html(classes="table table-striped table-hover", index=False)
 
     context = {
         'model_name': model_name,
@@ -389,6 +484,7 @@ def model_evaluation(request):
     return render(request, 'model_evaluation.html', context)
 
 
+@decorators.login_required
 def save_model(request):
     user = request.user.id
     user = User.objects.get(id=user)
@@ -405,25 +501,17 @@ def save_model(request):
             project_name = request.POST.get('project_name')
             pickle_file = pickle.dumps(model)
 
-            """
-            Saving document path with user id 
-            """
+            # ============ Saving document path with user id ============ #
             doc_id = Document(user_id=user.id, document=uploaded_file_url)
             doc_id.save()
 
-            """
-            filtering docs with user id and uploaded doc name        
-            """
+            # ============ filtering docs with user id and uploaded doc name ============ #
             doc_id = Document.objects.filter(user_id=user.id, document=doc_id)
             last_doc_id = doc_id[0].id
             # last_doc_id = doc_id[len(doc_id)-1].id
 
-            """
-            creating an instance for trained model to be saved
-            """
+            # ============ creating an instance for trained model to be saved ============ #
             doc_instance = Document.objects.get(id=last_doc_id)
-            print(doc_instance)
-            print(doc_instance.id)
 
             data = TrainedModels(
                 document=doc_instance,
@@ -442,6 +530,7 @@ def save_model(request):
         return redirect("/signin/")
 
 
+@decorators.login_required
 def profile_data(request):
     user = str(request.user.id)
     docs_name_list = []
@@ -460,20 +549,20 @@ def profile_data(request):
 
             if request.method == 'POST':
                 button_id = request.POST.get('test_model_button')
-                print('button_id: ', button_id)
+                # print('button_id: ', button_id)
                 selected_project = docs_name_list[int(button_id)]
-                print("selected_project", selected_project)
+                # print("selected_project", selected_project)
                 global get_selected_project
 
                 def get_selected_project():
                     return [selected_project]
 
                 return redirect('/model_testing/')
-            print("-----------------------------------------------")
-            print(docs_name_list)
-            print('projects_name_list')
-            print(projects_name_list)
-            print("-----------------------------------------------")
+            # print("-----------------------------------------------")
+            # print(docs_name_list)
+            # print('projects_name_list')
+            # print(projects_name_list)
+            # print("-----------------------------------------------")
             context = {
                 'document_project_name': zip(docs_name_list, projects_name_list),
             }
@@ -487,6 +576,7 @@ def profile_data(request):
         return redirect('/signin/')
 
 
+@decorators.login_required
 def model_testing(request):
     if request.user.id:
         user = str(request.user.id)
@@ -508,9 +598,9 @@ def model_testing(request):
             predict = request.POST.getlist('inputs')
             predict = [[int(i) for i in predict]]
             model_file = pickle.loads(model_file)
-            print(predict)
-            print(col_names)
-            print('Model Name:', model_name)
+            # print(predict)
+            # print(col_names)
+            # print('Model Name:', model_name)
             if saved_model_type == 'Classification':
                 predict = pd.DataFrame(predict, columns=col_names)
                 predict = sc_X.transform(predict)
@@ -518,12 +608,12 @@ def model_testing(request):
                 custom_predictions = str(custom_predictions[0])
             else:
                 custom_predictions = model_file.predict(predict)
-                print(custom_predictions)
+                # print(custom_predictions)
                 custom_predictions = str(custom_predictions[0])
             test_data = [['Prediction', custom_predictions]]
-            print("custom_predictions", custom_predictions)
+            # print("custom_predictions", custom_predictions)
             df_test = pd.DataFrame(test_data)
-            df_test = df_test.to_html(classes="table table-striped table-hover")
+            df_test = df_test.to_html(classes="table table-striped table-hover", index=False)
         context = {
             'model_name': model_name,
             'predictions': df_test,
