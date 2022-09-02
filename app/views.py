@@ -112,16 +112,16 @@ def upload(request):
 
     elif request.method == 'POST':
         user = str(request.user.id)
+        if not os.path.isdir(os.path.join(media_path, user)):
+            os.mkdir(media_path + os.sep + user)  # os.mkdir(os.path.join(media_path, user))
+
+        if not os.path.isdir(os.path.join(media_path, user, 'documents')):
+            os.mkdir(media_path + os.sep + user + os.sep + 'documents')
+
         if 'custom_file' in request.POST:
 
             # logger.debug("[INFO] Current path is ", os.getcwd())
-            # logger.debug("[INFO] media path is ", os.path.join(media_path, user))
-            if not os.path.isdir(os.path.join(media_path, user)):
-                os.mkdir(media_path + os.sep + user)  
-                # os.mkdir(os.path.join(media_path, user))
-
-            if not os.path.isdir(os.path.join(media_path, user, 'documents')):
-                os.mkdir(os.path.join(media_path, user, 'documents'))
+            # logger.debug("[INFO] media path is ", os.path.join(media_path, user)
 
             myFile = request.FILES.get('myFile')
             if myFile:
@@ -176,7 +176,7 @@ def eda(request):
 
         png_files_path = []
 
-        folder = os.path.join(settings.MEDIA_ROOT, str(user), 'graphs')
+        folder = media_path + str(user) + 'graphs'
         if not os.path.isdir(folder):
             os.mkdir(folder)
 
