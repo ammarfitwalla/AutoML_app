@@ -156,3 +156,5 @@ MESSAGE_TAGS = {
 }
 
 LOGIN_URL = '/signin/'
+
+print(BASE_DIR)

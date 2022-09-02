@@ -117,7 +117,8 @@ def upload(request):
             # logger.debug("[INFO] Current path is ", os.getcwd())
             # logger.debug("[INFO] media path is ", os.path.join(media_path, user))
             if not os.path.isdir(os.path.join(media_path, user)):
-                os.mkdir(os.path.join(media_path, user))
+                os.mkdir(media_path + os.sep + user)  
+                # os.mkdir(os.path.join(media_path, user))
 
             if not os.path.isdir(os.path.join(media_path, user, 'documents')):
                 os.mkdir(os.path.join(media_path, user, 'documents'))
