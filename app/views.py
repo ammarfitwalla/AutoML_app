@@ -32,16 +32,26 @@ automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
 numerical_model_name_list = ['Linear Regression']
 media_path = settings.MEDIA_ROOT
 
-
 sc_X = StandardScaler()
 
 plt.switch_backend('agg')
+
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
+
+
+def check_dir_exists(path):
+    """
+    :param path: /path/to/dir
+    :return: if dir not present, it creates a dir
+    """
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
 
 def home(request):
     return render(request, 'home.html')
@@ -61,11 +71,11 @@ def sign_up(request):
             return redirect('/signup/')
 
         if len(username) > 10:
-            messages.warning(request, "username must be below 10 characters")
+            messages.warning(request, "Username must be below 10 characters")
             return redirect('/signup/')
 
         if not username.isalnum():
-            messages.warning(request, "username must be Alphanumeric only")
+            messages.warning(request, "Username must be Alphanumeric only")
             return redirect('/signup/')
 
         if User.objects.filter(email=email).exists():
@@ -77,7 +87,7 @@ def sign_up(request):
 
         custom_user = Profile(user=user)
         custom_user.save()
-        messages.success(request, 'account created, please login here')
+        messages.success(request, 'Account created, please login here')
         return redirect('/signin/')
 
     return render(request, 'signup.html')
@@ -112,18 +122,17 @@ def upload(request):
 
     elif request.method == 'POST':
         user = str(request.user.id)
-        if not os.path.isdir(os.path.join(media_path, user)):
-            os.mkdir(media_path + os.sep + user)  # os.mkdir(os.path.join(media_path, user))
 
-        if not os.path.isdir(os.path.join(media_path, user, 'documents')):
-            os.mkdir(media_path + os.sep + user + os.sep + 'documents')
+        check_dir_exists(media_path + os.sep + user)
+        check_dir_exists(media_path + os.sep + user + os.sep + 'documents')
+        check_dir_exists(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
 
         if 'custom_file' in request.POST:
 
             myFile = request.FILES.get('myFile')
             if myFile:
                 if os.path.splitext(myFile.name)[-1] == ".csv":
-                    fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep))
+                    fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep + 'input_files' + os.sep))
                     myFile.name = get_valid_filename(myFile.name)
                     fs.save(myFile.name, myFile)
                     # uploaded_file_url = fs.url(filename)
@@ -137,7 +146,7 @@ def upload(request):
                 messages.error(request, 'Please upload csv file, then click on Upload')
                 return redirect('/upload/')
         else:
-            shutil.copy(os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1]), os.path.join(media_path, user, 'documents'))
+            shutil.copy(os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1]), os.path.join(media_path, user, 'documents', 'input_files'))
             return redirect('/eda/')
 
     return render(request, 'upload.html')
@@ -148,7 +157,7 @@ def eda(request):
     user = request.user.id
 
     if user is not None:
-        file_path = os.path.join(media_path, str(user), 'documents')
+        file_path = os.path.join(media_path, str(user), 'documents', 'input_files')
         list_of_files = glob.glob(file_path + os.sep + '*')
         file_name = max(list_of_files, key=os.path.getmtime)
         with open(file_name, 'rb') as rawdata:
@@ -172,8 +181,7 @@ def eda(request):
         png_files_path = []
 
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
-        if not os.path.isdir(folder):
-            os.mkdir(folder)
+        check_dir_exists(folder)
 
         a4_dims = (11.7, 8.27)
         for i in all_categorical:
@@ -206,7 +214,7 @@ def eda(request):
 @decorators.login_required
 def data_preprocessing(request):
     user = request.user.id
-    file_path = os.path.join(media_path, str(user), 'documents')
+    file_path = os.path.join(media_path, str(user), 'documents', 'input_files')
     list_of_files = glob.glob(file_path + os.sep + '*')
     file_name = max(list_of_files, key=os.path.getmtime)
     with open(file_name, 'rb') as rawdata:
@@ -347,11 +355,7 @@ def model_selection(request):
                 # used_model.append([user, model_name])
                 model_details['model_name'] = model_name
 
-            print("=================================")
-            a = model.predict(X_test)
-            print(type(a))
-            print(a.shape)
-            print("=================================")
+            model_details['model_type'] = model_name
             model_details['predictions'] = model.predict(X_test)
             # predictions.append([user, model.predict(X_test)])
             # filtered_predictions = [i for i in predictions if i[0] == user]
@@ -419,12 +423,11 @@ def model_evaluation(request):
     y_test = pd.read_csv(docs_path + os.sep + 'y_test.csv')
     y_test.drop(columns=y_test.columns[0], axis=1, inplace=True)
     y_pred = np.asarray(json_file['predictions'])
-    model_eva_type = json_file['model_name']
+    model_eva_type = json_file['model_type']
 
     if model_eva_type in ['Regression', 'Linear Regression']:
-        folder_ = os.path.join(settings.MEDIA_ROOT, user, 'regression_graphs')
-        if not os.path.isdir(folder_):
-            os.mkdir(folder_)
+        folder_ = media_path + os.sep + user + os.sep + 'regression_graphs'
+        check_dir_exists(folder_)
         png_file_name_ = folder_ + os.sep + "true_vs_predictions.png"
         mae = metrics.mean_absolute_error(y_test, y_pred)
         mse = metrics.mean_squared_error(y_test, y_pred)
@@ -435,18 +438,7 @@ def model_evaluation(request):
 
         my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse], ['Root Mean Squared Error', rmse]]
 
-        # plt.scatter(y_test, y_pred, c='crimson')
-        # plt.yscale('log')
-        # plt.xscale('log')
-        #
-        # p1 = max(max(y_pred), max(y_test))
-        # p2 = min(min(y_pred), min(y_test))
-        # plt.plot([p1, p2], [p1, p2], 'b-')
-        # plt.xlabel('True Values')
-        # plt.ylabel('Predictions')
-        # plt.axis('equal')
-        # plt.savefig(png_file_name_)
-        # plt.close()
+        # plt.scatter(y_test, y_pred, c='crimson')  # plt.yscale('log')  # plt.xscale('log')  #  # p1 = max(max(y_pred), max(y_test))  # p2 = min(min(y_pred), min(y_test))  # plt.plot([p1, p2], [p1, p2], 'b-')  # plt.xlabel('True Values')  # plt.ylabel('Predictions')  # plt.axis('equal')  # plt.savefig(png_file_name_)  # plt.close()
 
     else:
         # print(model_name)
@@ -481,18 +473,26 @@ def model_evaluation(request):
     context = {'model_name': model_name, 'df': df_to_html, 'fig': png_file_name_, }
     return render(request, 'model_evaluation.html', context)
 
+
 # TODO : WORK ON THIS FUNCTION, REMOVE GLOBAL MODEL
 @decorators.login_required
 def save_model(request):
     user_id = request.user.id
     user = User.objects.get(id=user_id)
+    docs_path = media_path + os.sep + str(user_id) + os.sep + 'documents'
     if user:
-        model_attributes = model_value()
-        model = model_attributes[1]
-        model_name = model_attributes[0]
-        X = model_attributes[8]
-        y = model_attributes[9]
-        used_model_type = model_attributes[10]
+        file = open(docs_path + os.sep + 'model_details.json')
+        json_file = json.load(file)
+        # model_attributes = model_value()
+        with open(docs_path + os.sep + 'model', 'rb') as f:
+            model = pickle.load(f)
+        model_name = json_file['model_name']
+        used_model_type = json_file['model_type']
+
+        X = pd.read_csv(docs_path + os.sep + 'X.csv')
+        X.drop(columns=X.columns[0], axis=1, inplace=True)
+        y = pd.read_csv(docs_path + os.sep + 'y.csv')
+        y.drop(columns=y.columns[0], axis=1, inplace=True)
 
         X_cols = [column for column in X.columns]
         if request.method == 'POST':
@@ -500,7 +500,7 @@ def save_model(request):
             pickle_file = pickle.dumps(model)
 
             # ============ Saving document path with user id ============ #
-            file_path = os.path.join(media_path, str(user_id), 'documents')
+            file_path = os.path.join(media_path, str(user_id), 'documents', 'input_files')
             list_of_files = glob.glob(file_path + os.sep + '*')
             file_name = max(list_of_files, key=os.path.getmtime)
             doc_id = Document(user_id=user.id, document=file_name)
@@ -531,6 +531,7 @@ def profile_data(request):
     projects_name_list = []
     if user:
         document = Document.objects.filter(user_id=user)
+        print(document)
         if document:
             for doc in document:
                 doc_name = str(doc).split("/")[-1]
@@ -543,20 +544,9 @@ def profile_data(request):
 
             if request.method == 'POST':
                 button_id = request.POST.get('test_model_button')
-                # print('button_id: ', button_id)
-                selected_project = docs_name_list[int(button_id)]
-                # print("selected_project", selected_project)
-                global get_selected_project
 
-                def get_selected_project():
-                    return [selected_project]
+                return redirect(f'/model_testing/{int(button_id)}')
 
-                return redirect('/model_testing/')
-            # print("-----------------------------------------------")
-            # print(docs_name_list)
-            # print('projects_name_list')
-            # print(projects_name_list)
-            # print("-----------------------------------------------")
             context = {'document_project_name': zip(docs_name_list, projects_name_list), }
         else:
             context = {'document_project_name': None, }
@@ -567,14 +557,12 @@ def profile_data(request):
 
 
 @decorators.login_required
-def model_testing(request):
+def model_testing(request, button_id):
     if request.user.id:
         user = str(request.user.id)
-        document_name = get_selected_project()
-        get_doc_id = Document.objects.filter(document=document_name[0]).values()
-        model_data = TrainedModels.objects.filter(document_id=get_doc_id[0]['id']).values()
+        get_doc_id = Document.objects.filter(user_id=user).values()
+        model_data = TrainedModels.objects.filter(document_id=get_doc_id[int(button_id)]['id']).values()
         df_test = None
-        # print(model_data)
         model_file = model_data[0]['model_file']
         project_name = model_data[0]['project_name']
         model_name = model_data[0]['model_name']
@@ -588,9 +576,6 @@ def model_testing(request):
             predict = request.POST.getlist('inputs')
             predict = [[int(i) for i in predict]]
             model_file = pickle.loads(model_file)
-            # print(predict)
-            # print(col_names)
-            # print('Model Name:', model_name)
             if saved_model_type == 'Classification':
                 predict = pd.DataFrame(predict, columns=col_names)
                 predict = sc_X.transform(predict)
@@ -598,10 +583,8 @@ def model_testing(request):
                 custom_predictions = str(custom_predictions[0])
             else:
                 custom_predictions = model_file.predict(predict)
-                # print(custom_predictions)
                 custom_predictions = str(custom_predictions[0])
             test_data = [['Prediction', custom_predictions]]
-            # print("custom_predictions", custom_predictions)
             df_test = pd.DataFrame(test_data)
             df_test = df_test.to_html(classes="table table-striped table-hover", index=False)
         context = {'model_name': model_name, 'predictions': df_test, 'col': col_names, 'project_name': project_name}

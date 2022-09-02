@@ -271,6 +271,7 @@ html [type="button"],
 [type="reset"],
 [type="submit"] {
   -webkit-appearance: button;
+
 }
 
 button::-moz-focus-inner,
@@ -551,6 +552,7 @@ pre code {
   width: 100%;
   padding-right: 15px;
   padding-left: 15px;
+  align: center;
   margin-right: auto;
   margin-left: auto;
 }

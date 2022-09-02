@@ -12,7 +12,7 @@ urlpatterns = [
     path('model_selection/', views.model_selection, name='model_selection'),
     path('model_evaluation/', views.model_evaluation, name='model_evaluation'),
     path('profile_data/', views.profile_data, name='profile_data'),
-    path('model_testing/', views.model_testing, name='model_testing'),
+    path('model_testing/<button_id>', views.model_testing, name='model_testing'),
     path('save_model/', views.save_model, name='save_model'),
     # path('profile/', views.profile, name='profile'),
 ]
