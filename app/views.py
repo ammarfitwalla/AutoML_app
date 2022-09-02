@@ -176,7 +176,7 @@ def eda(request):
 
         png_files_path = []
 
-        folder = media_path + str(user) + 'graphs'
+        folder = media_path + os.sep + str(user) + os.sep + 'graphs'
         if not os.path.isdir(folder):
             os.mkdir(folder)
 
@@ -188,7 +188,7 @@ def eda(request):
             plt.axis()
             plt.savefig(png_file_name)
             plt.close()
-            png_files_path.append(png_file_name)
+            png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + i+'.png')
         # print(png_files_path)
 
         data_corr = df.corr()
@@ -198,7 +198,7 @@ def eda(request):
         plt.title("Correlation between features", weight='bold', fontsize=15)
         correlation_name = f'{folder}{os.sep}correlation_123456789.png'
         plt.savefig(correlation_name)
-        png_files_path.append(correlation_name)
+        png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + 'correlation_123456789.png')
 
         if request.method == 'POST':
             def eda_val():
