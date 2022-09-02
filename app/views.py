@@ -1,17 +1,20 @@
 import glob
 import os
 import pickle
+# import logging
+import shutil
+
 import chardet
 from .utils import *
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from app.models import *
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import category_encoders as ce
 from django.conf import settings
 from django.contrib import messages
-import seaborn as sns
 from django.utils.text import get_valid_filename
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -20,6 +23,7 @@ from django.contrib.auth import authenticate, login, logout, decorators
 from pandas.api.types import is_numeric_dtype, is_float_dtype, is_string_dtype
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
+# logger = logging.getLogger(__name__)
 val = None
 model_value = None
 get_selected_project = None
@@ -108,24 +112,35 @@ def upload(request):
 
     elif request.method == 'POST':
         user = str(request.user.id)
-        if not os.path.isdir(os.path.join(media_path, user)):
-            os.mkdir(os.path.join(media_path, user))
+        if 'custom_file' in request.POST:
 
-        if not os.path.isdir(os.path.join(media_path, user, 'documents')):
-            os.mkdir(os.path.join(media_path, user, 'documents'))
+            # logger.debug("[INFO] Current path is ", os.getcwd())
+            # logger.debug("[INFO] media path is ", os.path.join(media_path, user))
+            if not os.path.isdir(os.path.join(media_path, user)):
+                os.mkdir(os.path.join(media_path, user))
 
-        myFile = request.FILES.get('myFile')
-        if os.path.splitext(myFile.name)[-1] == ".csv":
-            fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep))
-            myFile.name = get_valid_filename(myFile.name)
-            fs.save(myFile.name, myFile)
-            # uploaded_file_url = fs.url(filename)
-            messages.success(request, 'File Uploaded')
+            if not os.path.isdir(os.path.join(media_path, user, 'documents')):
+                os.mkdir(os.path.join(media_path, user, 'documents'))
 
-            return redirect('/eda/')
+            myFile = request.FILES.get('myFile')
+            if myFile:
+                if os.path.splitext(myFile.name)[-1] == ".csv":
+                    fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep))
+                    myFile.name = get_valid_filename(myFile.name)
+                    fs.save(myFile.name, myFile)
+                    # uploaded_file_url = fs.url(filename)
+                    messages.success(request, 'File Uploaded')
+
+                    return redirect('/eda/')
+                else:
+                    messages.error(request, 'Please select valid file with extension .csv')
+                    return redirect('/upload/')
+            else:
+                messages.error(request, 'Please upload csv file, then click on Upload')
+                return redirect('/upload/')
         else:
-            messages.error(request, 'Please select valid file with extension .csv')
-            return redirect('/upload/')
+            shutil.copy(os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1]), os.path.join(media_path, user, 'documents'))
+            return redirect('/eda/')
 
     return render(request, 'upload.html')
 
@@ -137,7 +152,7 @@ def eda(request):
 
     if user is not None:
         file_path = os.path.join(media_path, str(user), 'documents')
-        list_of_files = glob.glob(file_path+os.sep+'*')
+        list_of_files = glob.glob(file_path + os.sep + '*')
         file_name = max(list_of_files, key=os.path.getmtime)
         with open(file_name, 'rb') as rawdata:
             result = chardet.detect(rawdata.read(10000))

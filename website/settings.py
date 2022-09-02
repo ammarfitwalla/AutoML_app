@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-n%@^xb0e*n)!-hkemiom6p2wq1u!^%w2_9v)%yhr4(ps53m7)+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'ml-gym.herokuapp.com']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -50,6 +50,25 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(BASE_DIR, 'debug.log'),
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['file'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#     },
+# }
 
 ROOT_URLCONF = 'website.urls'
 # print(BASE_DIR)

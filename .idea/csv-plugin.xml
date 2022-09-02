@@ -17,6 +17,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\media\sample_csv\california_housing.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\media\sample_csv\titanic.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
