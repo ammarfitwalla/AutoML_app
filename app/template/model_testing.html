@@ -11,13 +11,13 @@
     <form class="border mt-5 border-secondary text-center p-3" method="post">
         {% csrf_token %}
         {% if model_name %}
-            <h4>{{model_name}}</h4>
+<!--            <h4>{{model_name}}</h4>-->
         {% endif %}
         {% if col %}
-        {% for c in col %}
+        {% for c,v in col %}
             <div class="form-group">
-                <input type="text" class="form-control" id="username"
-                       name="inputs" placeholder="Enter {{c}}" required>
+                <div><h5><b>{{c}}</b></h5><input type="text" class="form-control" id="username"
+                       name="inputs" value="{{v}}" required></div>
             </div>
         {% endfor %}
         {% endif %}

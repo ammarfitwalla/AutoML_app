@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from picklefield.fields import PickledObjectField
+import jsonfield
 
 
 # Create your models here.
@@ -34,6 +35,8 @@ class TrainedModels(models.Model):
     project_name = models.CharField(max_length=255, blank=False)
     column_names = models.CharField(max_length=1000, blank=False)
     model_file = PickledObjectField()
+    oh_encoders = jsonfield.JSONField(null=True, blank=True)
+    independent_variable = jsonfield.JSONField(null=True, blank=True)
 
     def __str__(self):
         return str(self.project_name)

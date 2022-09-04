@@ -1,6 +1,7 @@
+import os
+import ast
 import glob
 import json
-import os
 import pickle
 # import logging
 import shutil
@@ -26,13 +27,10 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 # logger = logging.getLogger(__name__)
 
-get_selected_project = None
 custom_model_type = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
 automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
 numerical_model_name_list = ['Linear Regression']
 media_path = settings.MEDIA_ROOT
-
-sc_X = StandardScaler()
 
 plt.switch_backend('agg')
 
@@ -129,6 +127,9 @@ def upload(request):
 
         if 'custom_file' in request.POST:
 
+            if os.path.exists(os.path.join(media_path + os.sep + user + os.sep + 'documents', 'oh_encoder.json')):
+                os.remove(os.path.join(media_path + os.sep + user + os.sep + 'documents', 'oh_encoder.json'))
+
             myFile = request.FILES.get('myFile')
             if myFile:
                 if os.path.splitext(myFile.name)[-1] == ".csv":
@@ -214,7 +215,8 @@ def eda(request):
 @decorators.login_required
 def data_preprocessing(request):
     user = request.user.id
-    file_path = os.path.join(media_path, str(user), 'documents', 'input_files')
+    docs_path = os.path.join(media_path, str(user), 'documents')
+    file_path = os.path.join(docs_path, 'input_files')
     list_of_files = glob.glob(file_path + os.sep + '*')
     file_name = max(list_of_files, key=os.path.getmtime)
     with open(file_name, 'rb') as rawdata:
@@ -267,8 +269,21 @@ def data_preprocessing(request):
         oh_encoder = ce.OrdinalEncoder(cols=categorical_col_names)
         df_preprocessing = oh_encoder.fit_transform(df_preprocessing)
 
+        oh_encoder_params = oh_encoder.get_params()
+
+        oh_encoder_dict = {}
+        for i in oh_encoder_params['mapping']:
+            temp_dict = i['mapping'].to_dict()
+            temp_dict_in_str = json.dumps(temp_dict)
+            temp_dict_lowercase = json.loads(temp_dict_in_str.lower())
+            oh_encoder_dict[i['col']] = temp_dict_lowercase
+
+        with open(docs_path + os.sep + "oh_encoder.json", "w") as outfile:
+            json.dump(oh_encoder_dict, outfile)
+
         if dependent_variable not in selected_check_list and df_col_numbers - len(selected_check_list) > 1:
             df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
+
             df_preprocessing.to_csv(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
 
             d = {'dependent_variable': dependent_variable, 'dependent_variable_type': str(df_preprocessing.dtypes[dependent_variable]), 'test_size_ratio': test_size_ratio}
@@ -288,7 +303,6 @@ def data_preprocessing(request):
 
 @decorators.login_required
 def model_selection(request):
-    global used_model, predictions
     user = str(request.user.id)
     # if request.is_ajax():
     #     print('AJAX REQUEST')
@@ -314,6 +328,7 @@ def model_selection(request):
     p_X_test = X_test.copy()
 
     if request.method == 'POST':
+        sc_X = StandardScaler()
         model_name = request.POST.get('model_name')
         evaluation_button = request.POST.get('evaluation')
 
@@ -474,7 +489,6 @@ def model_evaluation(request):
     return render(request, 'model_evaluation.html', context)
 
 
-# TODO : WORK ON THIS FUNCTION, REMOVE GLOBAL MODEL
 @decorators.login_required
 def save_model(request):
     user_id = request.user.id
@@ -488,7 +502,7 @@ def save_model(request):
             model = pickle.load(f)
         model_name = json_file['model_name']
         used_model_type = json_file['model_type']
-
+        file.close()
         X = pd.read_csv(docs_path + os.sep + 'X.csv')
         X.drop(columns=X.columns[0], axis=1, inplace=True)
         y = pd.read_csv(docs_path + os.sep + 'y.csv')
@@ -498,6 +512,11 @@ def save_model(request):
         if request.method == 'POST':
             project_name = request.POST.get('project_name')
             pickle_file = pickle.dumps(model)
+
+            if os.path.exists(os.path.join(docs_path, 'oh_encoder.json')):
+                oh_encoder = json.load(open(os.path.join(docs_path, 'oh_encoder.json')))
+            else:
+                oh_encoder = None
 
             # ============ Saving document path with user id ============ #
             file_path = os.path.join(media_path, str(user_id), 'documents', 'input_files')
@@ -514,8 +533,11 @@ def save_model(request):
             # ============ creating an instance for trained model to be saved ============ #
             doc_instance = Document.objects.get(id=last_doc_id)
 
-            data = TrainedModels(document=doc_instance, project_name=project_name, model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type, )
+            X_json = X.to_json(orient='records')
+            data = TrainedModels(document=doc_instance, project_name=project_name, model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type, oh_encoders=oh_encoder, independent_variable=X_json)
             data.save()
+            os.remove(os.path.join(docs_path, 'oh_encoder.json'))
+
             messages.success(request, 'Your Project has been saved successfully !')
 
             return redirect('/profile_data/')
@@ -561,33 +583,49 @@ def model_testing(request, button_id):
     if request.user.id:
         user = str(request.user.id)
         get_doc_id = Document.objects.filter(user_id=user).values()
-        model_data = TrainedModels.objects.filter(document_id=get_doc_id[int(button_id)]['id']).values()
+        print('get_doc_id', get_doc_id)
+        model_data = TrainedModels.objects.filter(document_id=get_doc_id[int(button_id)]['id']).values()  # TODO  : NEED to fix this
+        print(model_data)
         df_test = None
-        model_file = model_data[0]['model_file']
         project_name = model_data[0]['project_name']
         model_name = model_data[0]['model_name']
-        saved_model_type = model_data[0]['model_type']
-        col_names = model_data[0]['column_names']
-        col_names = list(col_names[1:-1])
-        col_names = "".join(col_names)
-        col_names = col_names.split(", ")
-        col_names = [i[1:-1] for i in col_names]
+        col_names = ast.literal_eval(model_data[0]['column_names'])
+        predict = ["" for i in range(len(col_names))]
         if request.method == 'POST':
+            sc_X = StandardScaler()
+            model_file = model_data[0]['model_file']
+            saved_model_type = model_data[0]['model_type']
+            one_hot_decoder = model_data[0]['oh_encoders']
+            X = ast.literal_eval(model_data[0]['independent_variable'])
             predict = request.POST.getlist('inputs')
-            predict = [[int(i) for i in predict]]
+            to_be_predicted = []
+            for column, value in zip(col_names, predict):
+                if one_hot_decoder and column in one_hot_decoder.keys():
+                    val = one_hot_decoder[column][value.lower()]
+                    try:
+                        to_be_predicted.append(int(val))
+                    except Exception as e:
+                        to_be_predicted.append(float(val))
+                else:
+                    try:
+                        to_be_predicted.append(int(value))
+                    except Exception as e:
+                        to_be_predicted.append(float(value))
+
             model_file = pickle.loads(model_file)
-            if saved_model_type == 'Classification':
-                predict = pd.DataFrame(predict, columns=col_names)
-                predict = sc_X.transform(predict)
-                custom_predictions = model_file.predict(predict)
-                custom_predictions = str(custom_predictions[0])
-            else:
-                custom_predictions = model_file.predict(predict)
-                custom_predictions = str(custom_predictions[0])
+            to_be_predicted = [to_be_predicted]
+            if saved_model_type not in ['Regression', 'Linear Regression']:
+                X = pd.DataFrame(X)
+                sc_X.fit(X)
+                to_be_predicted = pd.DataFrame(to_be_predicted, columns=col_names)
+                to_be_predicted = sc_X.transform(to_be_predicted)
+
+            custom_predictions = model_file.predict(to_be_predicted)
+            custom_predictions = str(custom_predictions[0])
             test_data = [['Prediction', custom_predictions]]
             df_test = pd.DataFrame(test_data)
             df_test = df_test.to_html(classes="table table-striped table-hover", index=False)
-        context = {'model_name': model_name, 'predictions': df_test, 'col': col_names, 'project_name': project_name}
+        context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict), 'project_name': project_name}
         return render(request, 'model_testing.html', context)
     else:
         return redirect('/signin/')
