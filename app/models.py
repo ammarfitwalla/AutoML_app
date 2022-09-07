@@ -29,6 +29,7 @@ class Document(models.Model):
         return str(self.document)
 
 class TrainedModels(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
     model_name = models.CharField(max_length=255, blank=False)
     model_type = models.CharField(max_length=255, blank=False)

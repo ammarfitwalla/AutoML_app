@@ -534,7 +534,7 @@ def save_model(request):
             doc_instance = Document.objects.get(id=last_doc_id)
 
             X_json = X.to_json(orient='records')
-            data = TrainedModels(document=doc_instance, project_name=project_name, model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type, oh_encoders=oh_encoder, independent_variable=X_json)
+            data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name, model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type, oh_encoders=oh_encoder, independent_variable=X_json)
             data.save()
             os.remove(os.path.join(docs_path, 'oh_encoder.json'))
 
@@ -551,25 +551,27 @@ def profile_data(request):
     user = str(request.user.id)
     docs_name_list = []
     projects_name_list = []
+    model_id = []
     if user:
         document = Document.objects.filter(user_id=user)
-        print(document)
         if document:
             for doc in document:
                 doc_name = str(doc).split("/")[-1]
-                model_data = TrainedModels.objects.filter(document_id=doc.id).values('project_name')
+                model_data = TrainedModels.objects.filter(document_id=doc.id).values()
                 if model_data:
                     for md in model_data:
                         project_name = str(md['project_name'])
                         docs_name_list.append(doc_name)
                         projects_name_list.append(project_name)
+                        print(md['id'])
+                        model_id.append(md['id'])
 
             if request.method == 'POST':
                 button_id = request.POST.get('test_model_button')
 
                 return redirect(f'/model_testing/{int(button_id)}')
 
-            context = {'document_project_name': zip(docs_name_list, projects_name_list), }
+            context = {'document_project_name': zip(docs_name_list, projects_name_list, model_id), }
         else:
             context = {'document_project_name': None, }
         return render(request, 'profile_data.html', context)
@@ -580,12 +582,14 @@ def profile_data(request):
 
 @decorators.login_required
 def model_testing(request, button_id):
-    if request.user.id:
-        user = str(request.user.id)
-        get_doc_id = Document.objects.filter(user_id=user).values()
-        print('get_doc_id', get_doc_id)
-        model_data = TrainedModels.objects.filter(document_id=get_doc_id[int(button_id)]['id']).values()  # TODO  : NEED to fix this
-        print(model_data)
+    user = request.user
+    user_id = user.id
+    if user_id:
+        # get_doc_id = Document.objects.filter(user_id=user).values()
+        # print('get_doc_id', get_doc_id)
+        # model_data = TrainedModels.objects.filter(document_id=get_doc_id[int(button_id)]['id']).values()  # TODO  : NEED to fix this
+        model_data = TrainedModels.objects.filter(user=user_id, id=button_id).values()  # TODO  : NEED to fix this
+        # print('model_data', model_data[0])
         df_test = None
         project_name = model_data[0]['project_name']
         model_name = model_data[0]['model_name']

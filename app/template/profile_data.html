@@ -22,11 +22,11 @@
 
         {% if document_project_name %}
 
-            {% for doc_name, project_name in document_project_name %}
+            {% for doc_name, project_name, model_id in document_project_name %}
 <!--            <h4>Document name : {{doc_name}}</h4>-->
             <h4>Project : {{project_name}}</h4>
 
-            <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{ forloop.counter0 }}">Test Model</button>
+            <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}">Test Model</button>
             {% endfor %}
 
         {% else %}
