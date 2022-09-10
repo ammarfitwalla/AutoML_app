@@ -8,4 +8,3 @@ This project is a web application that helps you with data science process flow 
 - model training
 - model evaluation
 - saving model
-- downloading model
