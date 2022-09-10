@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import ast
 import glob
@@ -27,9 +28,9 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 # logger = logging.getLogger(__name__)
 
-custom_model_type = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
-automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
-numerical_model_name_list = ['Linear Regression']
+# all_ml_models = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
+# automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
+# numerical_model_name_list = ['Linear Regression']
 media_path = settings.MEDIA_ROOT
 
 plt.switch_backend('agg')
@@ -113,6 +114,26 @@ def logout_page(request):
     return redirect('/signin/')
 
 
+def download_file(request, filename):
+    # Define Django project base directory
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    path = os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1])
+    # Define text file name
+    # filename = 'test.txt'
+    # Define the full file path
+    filepath = BASE_DIR + '/downloadapp/Files/' + filename
+    # Open the file for reading content
+    path = open(filepath, 'r')
+    # Set the mime type
+    mime_type, _ = mimetypes.guess_type(filepath)
+    # Set the return value of the HttpResponse
+    response = HttpResponse(path, content_type=mime_type)
+    # Set the HTTP header for sending to browser
+    response['Content-Disposition'] = "attachment; filename=%s" % filename
+    # Return the response value
+    return response
+
 @decorators.login_required
 def upload(request):
     if not request.user.is_authenticated:
@@ -146,6 +167,16 @@ def upload(request):
             else:
                 messages.error(request, 'Please upload csv file, then click on Upload')
                 return redirect('/upload/')
+
+        elif '_download' in list(request.POST.keys())[-1]:
+            name = list(request.POST.keys())[-1]
+            filename = name.split("_download")[0]
+            filepath = os.path.join(media_path, 'sample_csv', filename)
+            path = open(filepath, 'r')
+            mime_type, _ = mimetypes.guess_type(filepath)
+            response = HttpResponse(path, content_type=mime_type)
+            response['Content-Disposition'] = "attachment; filename=%s" % filename
+            return response
         else:
             shutil.copy(os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1]), os.path.join(media_path, user, 'documents', 'input_files'))
             return redirect('/eda/')
@@ -303,6 +334,9 @@ def data_preprocessing(request):
 
 @decorators.login_required
 def model_selection(request):
+    all_ml_models = ['(AutoML) Regression', 'Linear Regression', '(AutoML) Classification', 'Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier']
+    # automl_model_type = []
+    # numerical_model_name_list = []
     user = str(request.user.id)
     # if request.is_ajax():
     #     print('AJAX REQUEST')
@@ -330,11 +364,12 @@ def model_selection(request):
     if request.method == 'POST':
         sc_X = StandardScaler()
         model_name = request.POST.get('model_name')
+        chosen_model_name = model_name
         evaluation_button = request.POST.get('evaluation')
 
         if evaluation_button is None:
             model_details = {}
-            if model_name in automl_model_type:
+            if model_name in ['(AutoML) Regression', '(AutoML) Classification']:
                 model_name = model_name.split(" ")[-1]
                 if model_name == 'Classification':
                     X_train = sc_X.fit_transform(X_train)
@@ -346,7 +381,7 @@ def model_selection(request):
                 model_details['model_name'] = automl_model_name
 
             else:
-                if model_name in numerical_model_name_list:
+                if model_name == 'Linear Regression':
                     model = get_linear_regression_model(X_train, y_train)
                 else:
                     p_X_train = X_train.copy()
@@ -396,7 +431,10 @@ def model_selection(request):
             with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + "model_details.json", "w") as outfile:
                 json.dump(model_details, outfile, cls=NumpyArrayEncoder)
 
-            context = {'actual_pred_df': actual_pred_df, 'model_name_list': automl_model_type + custom_model_type}
+            all_ml_models.remove(chosen_model_name)
+            all_ml_models.insert(0, chosen_model_name)
+
+            context = {'actual_pred_df': actual_pred_df, 'model_name_list': all_ml_models}
 
             return render(request, 'model_selection.html', context)
         else:
@@ -423,7 +461,7 @@ def model_selection(request):
 
             return redirect('/model_evaluation/')
 
-    context = {'model_name_list': automl_model_type + custom_model_type}
+    context = {'model_name_list': all_ml_models}
 
     return render(request, 'model_selection.html', context)  # except:  #     return redirect('/eda/')
 
