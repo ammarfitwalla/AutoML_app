@@ -142,7 +142,7 @@ STATIC_URL = 'app/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
-print(STATIC_ROOT)
+# print(STATIC_ROOT)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
@@ -157,4 +157,4 @@ MESSAGE_TAGS = {
 
 LOGIN_URL = '/signin/'
 
-print(BASE_DIR)
+# print(BASE_DIR)

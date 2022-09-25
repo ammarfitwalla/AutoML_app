@@ -101,7 +101,7 @@ def login_page(request):
         if user is not None:
             login(request, user)
             messages.success(request, 'Successfully Logged in')
-            return redirect('/')
+            return redirect('/upload/')
         else:
             messages.error(request, 'Invalid Credentials')
             return redirect('/signin/')
@@ -601,7 +601,7 @@ def profile_data(request):
                         project_name = str(md['project_name'])
                         docs_name_list.append(doc_name)
                         projects_name_list.append(project_name)
-                        print(md['id'])
+                        # print(md['id'])
                         model_id.append(md['id'])
 
             if request.method == 'POST':
