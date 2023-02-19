@@ -16,23 +16,29 @@
 {% endfor %}
 {% endif %}
 
+<br>
+
 <div>
     <form method="POST">
         {% csrf_token %}
 
         {% if document_project_name %}
 
-            {% for doc_name, project_name, model_id in document_project_name %}
-<!--            <h4>Document name : {{doc_name}}</h4>-->
-            <h4>Project : {{project_name}}</h4>
+        {% for doc_name, project_name, model_id in document_project_name %}
+        <!--            <h4>Document name : {{doc_name}}</h4>-->
+        <h4>Project : {{project_name}}</h4>
 
-            <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}">Test Model</button>
-            {% endfor %}
+        <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}">Test Model
+        </button>
+        {% endfor %}
 
         {% else %}
-            <h3>There are no saved data</h3>
+        <h3>There are no saved data</h3>
         {% endif %}
 
+        <div style="padding-top:10%;" class="flex-center flex-column">
+            <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
+        </div>
     </form>
 </div>
 

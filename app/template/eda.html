@@ -28,7 +28,7 @@
             {% endfor %}
         </li>
         <br>
-        <li><h5>Below table shows first 5 rows your data</h5>
+        <li><label>Below table shows 10 rows your data</label>
             {% if df_html %}
             <div>
                 {{df_html | safe}}
@@ -37,7 +37,7 @@
         </li>
 
 
-        <li><h5>Below table displays short description about your data</h5>
+        <li><label>Below table displays short description about your data</label>
             {% if df_describe_html %}
             <div>
                 {{df_describe_html | safe}}
@@ -48,23 +48,26 @@
     </ul>
 
     <div class="container" style="float:center;">
-
-        {% for graph in png_files_path %}
         {% if png_files_path %}
+        <ul><li><label>Graphical representations below</label></li></ul>
+        {% for graph in png_files_path %}
         <div class="imgContainer" style="float:centre;">
-            <img src="../../media/{{graph}}" style="width:70%">
-<!--            <img src="{{graph}}" style="width:70%">-->
+            <img src="../../media/{{graph}}" style="width:80%">
+            <!--            <img src="{{graph}}" style="width:70%">-->
             <br>
         </div>
-        {% endif %}
         {% endfor %}
+        {% endif %}
+
     </div>
 
     <form method="POST">
         {% csrf_token %}
         <button type="submit" class="btn btn-primary btn-sm">Start Preprocessing</button>
     </form>
-<br>
+    <div style="padding-top:10%;" class="flex-center flex-column">
+        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
+    </div>
 </div>
 
 <style xmlns="http://www.w3.org/1999/html">
@@ -81,6 +84,7 @@ text-align: center;
 label{
 font-size:20px;
 }
+
 
 </style>
 

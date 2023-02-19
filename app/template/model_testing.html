@@ -11,14 +11,14 @@
     <form class="border mt-5 border-secondary text-center p-3" method="post">
         {% csrf_token %}
         {% if model_name %}
-<!--            <h4>{{model_name}}</h4>-->
+        <!--            <h4>{{model_name}}</h4>-->
         {% endif %}
         {% if col %}
         {% for c,v in col %}
-            <div class="form-group">
-                <div><h5><b>{{c}}</b></h5><input type="text" class="form-control" id="username"
-                       name="inputs" value="{{v}}" required></div>
-            </div>
+        <div class="form-group">
+            <div><h5><b>{{c}}</b></h5><input type="text" class="form-control" id="username"
+                                             name="inputs" value="{{v}}" required></div>
+        </div>
         {% endfor %}
         {% endif %}
         <button type="submit" class="btn btn-primary btn-sm" name="predict">Predict</button>
@@ -27,6 +27,10 @@
     {% if predictions %}
     <h4>{{ predictions | safe }}</h4>
     {% endif %}
+
+    <div style="padding-top:10%;" class="flex-center flex-column">
+        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
+    </div>
 </div>
 
 {% endblock %}

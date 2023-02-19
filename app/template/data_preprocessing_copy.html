@@ -109,9 +109,11 @@ td, th {
   padding: 8px;
 }
 
-.checkbox div{
-  display: inline;
-}
+
+
+
+
+
 
 
 
@@ -157,12 +159,20 @@ td, th {
         <ul>
             <li>
                 <label><b>Select the columns you want to drop: </b></label>
-                <div class="checkbox">
-                    {% for col in df_cols %}
-                    <label for="{{ forloop.counter0 }}">
-                        <input type="checkbox" value="{{col}}" name="checkbox_name"
-                               id="{{ forloop.counter0 }}"/>&nbsp;{{col}}&nbsp;&nbsp;&nbsp;</label>
-                    {% endfor %}
+                <div class="multiselect">
+                    <div class="selectBox" onclick="showCheckboxes()">
+                        <select>
+                            <option>Select columns</option>
+                        </select>
+                        <div class="overSelect"></div>
+                    </div>
+                    <div id="checkboxes">
+                        {% for col in df_cols %}
+                        <label for="{{ forloop.counter0 }}">
+                            <input type="checkbox" value="{{col}}" name="checkbox_name"
+                                   id="{{ forloop.counter0 }}"/>{{col}}</label>
+                        {% endfor %}
+                    </div>
                 </div>
             </li>
         </ul>
@@ -186,9 +196,29 @@ td, th {
             </details>
             <br>
             <div>
-                {% if string_cols %}
-                <h5>String Column(s)</h5>
-                {% endif %}
+
+                <!--            {% for str_col in string_cols %}-->
+                <!--            <label><b>{{ str_col }}</b></label>-->
+                <!--            {% for str_way in list_handle_nan_str_values %}-->
+                <!--            <div>-->
+                <!--                <input type="radio" id="{{str_way}}" name="{{str_col}}" value="{{str_way}}" required>-->
+                <!--                <label for="{{str_way}}">{{str_way}}</label><br>-->
+                <!--            </div>-->
+                <!--            {% endfor %}-->
+                <!--            {% endfor %}-->
+                <!--            {% endif %}-->
+
+                <!--            {% if nan_columns %}-->
+                <!--            {% for null_column in nan_columns %}-->
+                <!--            <span><b>{{ null_column }}</b></span>-->
+                <!--            {% for way in list_handle_nan_values %}-->
+                <!--            <div>-->
+                <!--                <input type="radio" id="{{way}}" name="{{null_column}}" value="{{way}}" required>-->
+                <!--                <label for="{{way}}">{{way}}</label><br>-->
+                <!--            </div>-->
+                <!--            {% endfor %}-->
+                <!--            {% endfor %}-->
+                <!--            {% endif %}-->
 
                 <table>
                     {% for str_col in string_cols %}
@@ -208,10 +238,8 @@ td, th {
                 </table>
                 <br>
 
-                {% if nan_columns %}
-                <h5>Numerical Column(s)</h5>
                 <table>
-
+                    {% if nan_columns %}
                     {% for null_column in nan_columns %}
                     <tr>
                         <td><label><b>{{ null_column }}</b></label></td>
@@ -230,19 +258,19 @@ td, th {
                 </table>
             </div>
         </ul>
-        {% endif %}
 
         <br>
 
         <!--------------------------------- TRAIN TEST SPLIT --------------------------------->
 
         <div class="slidecontainer">
+            <div id="train_ratio" class="value">70 %</div>
             <ul>
-                <div id="train_ratio" class="value">70 %</div>
                 <li><label><b>Train and Test split ratio: </b></label>
                     <input type="range" min="1" max="99" value="70" name="slider_value" class="slider" id="myRange">
                     <br>
                     <br>
+                    <!--        <p>Train: <span id="train_ratio"></span></p>-->
                 </li>
             </ul>
         </div>
@@ -278,11 +306,6 @@ function showCheckboxes() {
     expanded = false;
   }
 }
-
-
-
-
-
 
 
 

@@ -1,6 +1,7 @@
 import mimetypes
 import os
 import ast
+import csv
 import glob
 import json
 import pickle
@@ -134,6 +135,7 @@ def download_file(request, filename):
     # Return the response value
     return response
 
+
 @decorators.login_required
 def upload(request):
     if not request.user.is_authenticated:
@@ -195,8 +197,14 @@ def eda(request):
         with open(file_name, 'rb') as rawdata:
             result = chardet.detect(rawdata.read(10000))
 
-        df = pd.read_csv(file_name, encoding=result['encoding'])
-        df_html = df.head().to_html(classes="table table-striped", index=False)
+        with open(file_name, newline='') as csvfile:
+            dialect = csv.Sniffer().sniff(csvfile.read())
+            if dialect.delimiter == ',':
+                df = pd.read_csv(file_name, encoding=result['encoding'])  # Import the csv with a comma as the separator
+            elif dialect.delimiter == ';':
+                df = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
+        # df = pd.read_csv(file_name, encoding=result['encoding'])
+        df_html = df.sample(10).to_html(classes="table table-striped", index=False)
         df_n_rows = df.shape[0]
         df_n_cols = df.shape[1]
         df_cols = [column for column in df.columns]
@@ -218,21 +226,29 @@ def eda(request):
         a4_dims = (11.7, 8.27)
         for i in all_categorical:
             plt.subplots(figsize=a4_dims)
-            png_file_name = folder + os.sep + i + ".png"
-            sns.countplot(x=df[i], data=df)
+            ax = sns.countplot(x=df[i], data=df)
+            if df[i].nunique() > 5:
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=25)
+            for p in ax.patches:
+                ax.annotate('{:.1f}'.format(p.get_height()), (p.get_x(), p.get_height() + 5))
             plt.axis()
+
+            png_file_name = folder + os.sep + i + ".png"
             plt.savefig(png_file_name)
             plt.close()
             png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + i + '.png')
 
-        data_corr = df.corr()
-        f, ax = plt.subplots(figsize=a4_dims)
-        # sns.heatmap(data_corr, cmap='viridis', annot=True)
-        sns.heatmap(data_corr, cmap='Blues', annot=True)
-        plt.title("Correlation between features", weight='bold', fontsize=15)
-        correlation_name = f'{folder}{os.sep}correlation_123456789.png'
-        plt.savefig(correlation_name)
-        png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + 'correlation_123456789.png')
+        try:
+            data_corr = df.corr()
+            f, ax = plt.subplots(figsize=a4_dims)
+            # sns.heatmap(data_corr, cmap='viridis', annot=True)
+            sns.heatmap(data_corr, cmap='Blues', annot=True)
+            plt.title("Correlation between features", weight='bold', fontsize=15)
+            correlation_name = f'{folder}{os.sep}correlation_123456789.png'
+            plt.savefig(correlation_name)
+            png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + 'correlation_123456789.png')
+        except Exception as err:
+            print(f"[ERROR PLOTTING]: Unable to plot the heatmap due to: {str(err)}")
 
         if request.method == 'POST':
             return redirect('/data_preprocessing/')
@@ -253,7 +269,14 @@ def data_preprocessing(request):
     with open(file_name, 'rb') as rawdata:
         result = chardet.detect(rawdata.read(10000))
 
-    df_preprocessing = pd.read_csv(file_name, encoding=result['encoding'])
+    with open(file_name, newline='') as csvfile:
+        dialect = csv.Sniffer().sniff(csvfile.read())
+        if dialect.delimiter == ',':
+            df_preprocessing = pd.read_csv(file_name, encoding=result['encoding'])  # Import the csv with a comma as the separator
+        elif dialect.delimiter == ';':
+            df_preprocessing = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
+
+    # df_preprocessing = pd.read_csv(file_name, encoding=result['encoding'])
 
     df_col_numbers = df_preprocessing.shape[1]
     df_col_names = [column for column in df_preprocessing.columns]
@@ -296,7 +319,11 @@ def data_preprocessing(request):
                     df_preprocessing[i] = df_preprocessing[i].fillna((df_preprocessing[i].median()))
 
         selected_check_list = request.POST.getlist('checkbox_name')
-
+        # selected_check_list = [i.strip() for i in selected_check_list]
+        # print("----------")
+        # print(selected_check_list)
+        # print(type(selected_check_list))
+        # print("----------")
         oh_encoder = ce.OrdinalEncoder(cols=categorical_col_names)
         df_preprocessing = oh_encoder.fit_transform(df_preprocessing)
 
@@ -313,6 +340,7 @@ def data_preprocessing(request):
             json.dump(oh_encoder_dict, outfile)
 
         if dependent_variable not in selected_check_list and df_col_numbers - len(selected_check_list) > 1:
+
             df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
 
             df_preprocessing.to_csv(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
@@ -433,6 +461,8 @@ def model_selection(request):
 
             all_ml_models.remove(chosen_model_name)
             all_ml_models.insert(0, chosen_model_name)
+
+            messages.success(request, f'Model "{str(model_name)}" has been trained successfully!')
 
             context = {'actual_pred_df': actual_pred_df, 'model_name_list': all_ml_models}
 
@@ -666,7 +696,7 @@ def model_testing(request, button_id):
             custom_predictions = str(custom_predictions[0])
             test_data = [['Prediction', custom_predictions]]
             df_test = pd.DataFrame(test_data)
-            df_test = df_test.to_html(classes="table table-striped table-hover", index=False)
+            df_test = df_test.to_html(classes="table table-striped table-hover", index=False, header=False)
         context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict), 'project_name': project_name}
         return render(request, 'model_testing.html', context)
     else:

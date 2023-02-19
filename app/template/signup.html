@@ -7,18 +7,18 @@ Sign Up
 {% block content %}
 
 <!-- MESSAGE -->
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
-        <strong>
-            {{message}}
-        </strong>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-    {% endfor %}
-    {% endif %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
+    <strong>
+        {{message}}
+    </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
 
 <div class="container mt-4">
     <div class="row">
@@ -30,7 +30,6 @@ Sign Up
                     Sign up
                 </a>
                 <a href="{% url 'signin' %}" class="list-group-item list-group-item-action waves-effect">Login</a>
-                </a>
             </div>
         </div>
 
@@ -51,7 +50,8 @@ Sign Up
                 </div>
 
                 <div class="form-group">
-                    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                    <input type="password" class="form-control" name="password" id="password" placeholder="Password"
+                           required>
                 </div>
                 <div class="form-group form-check">
                     <input type="checkbox" class="form-check-input" id="exampleCheck1">
@@ -105,7 +105,9 @@ Sign Up
         </div>
 
         <div class="col-md-2"></div>
-
+    </div>
+    <div style="padding-top:10%;" class="flex-center flex-column">
+        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
     </div>
 </div>
 
@@ -114,6 +116,7 @@ Sign Up
 	function get_ip(json) {
 		$("#id_location").val(json.ip);
 	}
+
 
 
 </script>

@@ -2,6 +2,21 @@
 
 {% block content %}
 
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
+    <strong>
+        {{message}}
+    </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
+
+<br>
 <form method="POST">
     {% csrf_token %}
     <div>
@@ -35,6 +50,10 @@
         {{actual_pred_df | safe}}
         {% endif %}
     </div>
+
+    <div style="padding-top:10%;" class="flex-center flex-column">
+        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
+    </div>
 </form>
 
 
@@ -60,6 +79,8 @@ $(document).ready(function(){
         });
     });
 });
+
+
 
 </script>
 {% endblock script %}

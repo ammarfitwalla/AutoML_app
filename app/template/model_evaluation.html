@@ -8,6 +8,7 @@ label{
     font-size:20px;
 }
 
+
 </style>
 <div>
     {% if df %}
@@ -22,11 +23,15 @@ label{
 <!--</div>-->
 
 <form method="POST">
-<!--    <label>Test model with custom input: </label>-->
-<!--    <button type="submit" name="test_model" class="btn btn-primary btn-sm">Test model</button>-->
+    <!--    <label>Test model with custom input: </label>-->
+    <!--    <button type="submit" name="test_model" class="btn btn-primary btn-sm">Test model</button>-->
     <br>
     <label>Click here to save the model: </label>
     <a type="submit" name="save_model" class="btn btn-primary btn-sm" href="{% url 'save_model' %}">Save model</a>
-
+    <label>Click here to choose different model: </label>
+    <a type="submit" name="model_selection" class="btn btn-primary btn-sm" href="{% url 'model_selection' %}">Choose model</a>
+    <div style="padding-top:10%;" class="flex-center flex-column">
+        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
+    </div>
 </form>
 {% endblock %}
