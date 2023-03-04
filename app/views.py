@@ -1,13 +1,13 @@
-import mimetypes
 import os
 import ast
 import csv
 import glob
 import json
 import pickle
-# import logging
 import shutil
 import chardet
+# import logging
+import mimetypes
 from .utils import *
 import pandas as pd
 import numpy as np
@@ -97,7 +97,6 @@ def login_page(request):
     if request.method == "POST":
         username = request.POST.get('username')
         password = request.POST.get('password')
-
         user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
@@ -119,7 +118,7 @@ def download_file(request, filename):
     # Define Django project base directory
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    path = os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1])
+    # path = os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1])
     # Define text file name
     # filename = 'test.txt'
     # Define the full file path
@@ -149,7 +148,6 @@ def upload(request):
         check_dir_exists(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
 
         if 'custom_file' in request.POST:
-
             if os.path.exists(os.path.join(media_path + os.sep + user + os.sep + 'documents', 'oh_encoder.json')):
                 os.remove(os.path.join(media_path + os.sep + user + os.sep + 'documents', 'oh_encoder.json'))
 
@@ -193,7 +191,12 @@ def eda(request):
     if user is not None:
         file_path = os.path.join(media_path, str(user), 'documents', 'input_files')
         list_of_files = glob.glob(file_path + os.sep + '*')
+
+        if not list_of_files:
+            return redirect('/upload/')
+
         file_name = max(list_of_files, key=os.path.getmtime)
+
         with open(file_name, 'rb') as rawdata:
             result = chardet.detect(rawdata.read(10000))
 
@@ -218,11 +221,10 @@ def eda(request):
         all_categorical = [col for col in df.columns if df[col].nunique() < 15]
         # object_categorical = [col for col in df.columns if df[col].dtype == 'O' and df[col].nunique() < 15]
 
-        png_files_path = []
-
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
         check_dir_exists(folder)
 
+        png_files_path = []
         a4_dims = (11.7, 8.27)
         for i in all_categorical:
             plt.subplots(figsize=a4_dims)
@@ -265,7 +267,12 @@ def data_preprocessing(request):
     docs_path = os.path.join(media_path, str(user), 'documents')
     file_path = os.path.join(docs_path, 'input_files')
     list_of_files = glob.glob(file_path + os.sep + '*')
-    file_name = max(list_of_files, key=os.path.getmtime)
+
+    if not list_of_files:
+        return redirect('/upload/')
+
+    file_name = max(list_of_files, key=os.path.getmtime)  # TODO : NEED TO FIX
+
     with open(file_name, 'rb') as rawdata:
         result = chardet.detect(rawdata.read(10000))
 
@@ -340,11 +347,8 @@ def data_preprocessing(request):
             json.dump(oh_encoder_dict, outfile)
 
         if dependent_variable not in selected_check_list and df_col_numbers - len(selected_check_list) > 1:
-
             df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
-
             df_preprocessing.to_csv(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
-
             d = {'dependent_variable': dependent_variable, 'dependent_variable_type': str(df_preprocessing.dtypes[dependent_variable]), 'test_size_ratio': test_size_ratio}
 
             with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + "df_preprocessed.json", "w") as outfile:
@@ -372,6 +376,8 @@ def model_selection(request):
     classifier = False
 
     docs_path = media_path + os.sep + user + os.sep + 'documents'
+    if not os.path.isfile(docs_path + os.sep + 'df_preprocessed.csv'):
+        return redirect('/upload/')
     df_model = pd.read_csv(docs_path + os.sep + 'df_preprocessed.csv')
     df_model.drop(columns=df_model.columns[0], axis=1, inplace=True)
     file = open(docs_path + os.sep + 'df_preprocessed.json')
@@ -492,7 +498,6 @@ def model_selection(request):
             return redirect('/model_evaluation/')
 
     context = {'model_name_list': all_ml_models}
-
     return render(request, 'model_selection.html', context)  # except:  #     return redirect('/eda/')
 
 
@@ -500,6 +505,8 @@ def model_selection(request):
 def model_evaluation(request):
     user = str(request.user.id)
     docs_path = media_path + os.sep + user + os.sep + 'documents'
+    if not os.path.isfile(docs_path + os.sep + 'model_details.json'):
+        return redirect('/upload/')
     file = open(docs_path + os.sep + 'model_details.json')
     json_file = json.load(file)
     model_name = json_file['model_name']
@@ -541,10 +548,16 @@ def model_evaluation(request):
         # f1 = '%.2f' % (metrics.f1_score(y_test, y_pred, average=average) * 100) + ' %'
         # precision = '%.2f' % (metrics.precision_score(y_test, y_pred, average=average) * 100) + ' %'
 
-        accuracy = '%.2f' % (metrics.accuracy_score(y_test, y_pred) * 100) + ' %'
-        recall = '%.2f' % (metrics.recall_score(y_test, y_pred) * 100) + ' %'
-        f1 = '%.2f' % (metrics.f1_score(y_test, y_pred) * 100) + ' %'
-        precision = '%.2f' % (metrics.precision_score(y_test, y_pred) * 100) + ' %'
+        try:
+            accuracy = '%.2f' % (metrics.accuracy_score(y_test, y_pred) * 100) + ' %'
+            recall = '%.2f' % (metrics.recall_score(y_test, y_pred) * 100) + ' %'
+            f1 = '%.2f' % (metrics.f1_score(y_test, y_pred) * 100) + ' %'
+            precision = '%.2f' % (metrics.precision_score(y_test, y_pred) * 100) + ' %'
+
+        except:
+            messages.info(request, 'For Regression problem, use only Regression model')
+            return redirect('/model_selection/')
+            # return render(request, 'model_evaluation.html')
 
         my_data = [['Model', model_name], ['Accuracy Score', accuracy], ['Recall Score', recall], ['F1 score', f1], ['Precision', precision]]
 
@@ -562,7 +575,10 @@ def save_model(request):
     user_id = request.user.id
     user = User.objects.get(id=user_id)
     docs_path = media_path + os.sep + str(user_id) + os.sep + 'documents'
+    graphs_path = media_path + os.sep + str(user_id) + os.sep + 'graphs'
     if user:
+        if not os.path.isfile(docs_path + os.sep + 'model_details.json'):
+            return redirect('/upload/')
         file = open(docs_path + os.sep + 'model_details.json')
         json_file = json.load(file)
         # model_attributes = model_value()
@@ -604,7 +620,15 @@ def save_model(request):
             X_json = X.to_json(orient='records')
             data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name, model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type, oh_encoders=oh_encoder, independent_variable=X_json)
             data.save()
-            os.remove(os.path.join(docs_path, 'oh_encoder.json'))
+
+            # ============ Clearing memory - Comment to keep the files ============
+            # os.remove(os.path.join(docs_path, 'oh_encoder.json'))
+            shutil.rmtree(docs_path)
+            shutil.rmtree(graphs_path)
+
+            # check_dir_exists(docs_path)
+            # check_dir_exists(graphs_path)
+            # check_dir_exists(docs_path + os.sep + 'input_files')
 
             messages.success(request, 'Your Project has been saved successfully !')
 
@@ -636,7 +660,6 @@ def profile_data(request):
 
             if request.method == 'POST':
                 button_id = request.POST.get('test_model_button')
-
                 return redirect(f'/model_testing/{int(button_id)}')
 
             context = {'document_project_name': zip(docs_name_list, projects_name_list, model_id), }
@@ -676,12 +699,12 @@ def model_testing(request, button_id):
                     val = one_hot_decoder[column][value.lower()]
                     try:
                         to_be_predicted.append(int(val))
-                    except Exception as e:
+                    except:
                         to_be_predicted.append(float(val))
                 else:
                     try:
                         to_be_predicted.append(int(value))
-                    except Exception as e:
+                    except:
                         to_be_predicted.append(float(value))
 
             model_file = pickle.loads(model_file)

@@ -41,23 +41,23 @@ Sign Up
                 {% csrf_token %}
                 <div class="form-group">
                     <input type="text" class="form-control" id="username"
-                           name="username" placeholder="Enter Username" required>
+                           name="username" placeholder="Username" required>
                 </div>
 
                 <div class="form-group">
                     <input type="email" class="form-control" id="email"
-                           name="email" placeholder="Enter email" required>
+                           name="email" placeholder="Email" required>
                 </div>
 
                 <div class="form-group">
                     <input type="password" class="form-control" name="password" id="password" placeholder="Password"
                            required>
                 </div>
-                <div class="form-group form-check">
-                    <input type="checkbox" class="form-check-input" id="exampleCheck1">
-                    <label class="form-check-label" for="exampleCheck1">Check me out</label>
-                </div>
-                <p class="h4 mb-4 text-secondary text-center">Sign up</p>
+<!--                <div class="form-group form-check">-->
+<!--                    <input type="checkbox" class="form-check-input" id="exampleCheck1">-->
+<!--                    <label class="form-check-label" for="exampleCheck1">Check me out</label>-->
+<!--                </div>-->
+<!--                <p class="h4 mb-4 text-secondary text-center">Sign up</p>-->
 
                 <!-- {{ form.as_p }} -->
 
@@ -97,8 +97,8 @@ Sign Up
 
                 <!-- Terms of service -->
                 <p>By clicking
-                    <em>Sign up</em> you agree to our
-                    <a href="" target="_blank">terms of service</a>
+                    <em>Sign up</em> you agree to our terms and conditions.
+<!--                    <a href="" target="_blank">terms of service</a>-->
                 </p>
             </form>
             <!-- Default form register -->
@@ -116,6 +116,7 @@ Sign Up
 	function get_ip(json) {
 		$("#id_location").val(json.ip);
 	}
+
 
 
 

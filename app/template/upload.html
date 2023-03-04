@@ -19,7 +19,7 @@
 
 <form method="post" enctype="multipart/form-data" action="/upload/">
     {% csrf_token %}
-    <h3>Upload your file (.csv)</h3>
+    <h3>Upload your file (.csv/.xlsx)</h3>
     <br>
     <div class="form-group">
         <input type="file" name="myFile" class="form-control" accept=".csv">
