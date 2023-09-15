@@ -15,8 +15,8 @@ import seaborn as sns
 from app.models import *
 from sklearn import metrics
 from json import JSONEncoder
-import matplotlib.pyplot as plt
 import category_encoders as ce
+import matplotlib.pyplot as plt
 from django.conf import settings
 from django.contrib import messages
 from django.utils.text import get_valid_filename
@@ -184,6 +184,36 @@ def upload(request):
     return render(request, 'upload.html')
 
 
+def divide_columns_into_df(df):
+    num_columns = len(df.columns)
+    if num_columns < 8:
+        return [df]
+    num_df = 2  # You can change this to divide into more dataframes if needed
+
+    # Calculate the number of columns in each dataframe
+    columns_per_df = num_columns // num_df
+    remainder = num_columns % num_df
+
+    dfs = []  # List to store the divided dataframes
+
+    start_col = 0
+    for i in range(num_df):
+        # Calculate the end column index for the current dataframe
+        end_col = start_col + columns_per_df
+        if i < remainder:
+            end_col += 1  # Distribute any remaining columns
+
+        # Slice the dataframe to get the current subset of columns
+        subset_df = df.iloc[:, start_col:end_col]
+
+        # Append the subset dataframe to the list
+        dfs.append(subset_df)
+
+        # Update the start column index for the next iteration
+        start_col = end_col
+
+    return dfs
+
 @decorators.login_required
 def eda(request):
     user = request.user.id
@@ -207,12 +237,16 @@ def eda(request):
             elif dialect.delimiter == ';':
                 df = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
         # df = pd.read_csv(file_name, encoding=result['encoding'])
-        df_html = df.sample(10).to_html(classes="table table-striped", index=False)
+        df_html = df.sample(10)
+        df_html = divide_columns_into_df(df_html)
+        df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i in df_html]
         df_n_rows = df.shape[0]
         df_n_cols = df.shape[1]
         df_cols = [column for column in df.columns]
         df_describe = df.describe()
-        df_describe_html = df_describe.to_html(classes="table table-striped")
+        df_describe = divide_columns_into_df(df_describe)
+        # df_describe_html = [i.to_html(classes="custom-table") for i in df_describe]
+        df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in df_describe]
         # all_categorical = [col for col in df.columns if df[col].nunique() < df.shape[0] // 5]
         # print("all_categorical", all_categorical)
         # object_categorical = [col for col in df.columns if
@@ -224,31 +258,78 @@ def eda(request):
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
         check_dir_exists(folder)
 
+        # png_files_path = []
+        # a4_dims = (11.7, 8.27)
+        # for i in all_categorical:
+        #     plt.subplots(figsize=a4_dims)
+        #     ax = sns.countplot(x=df[i], data=df)
+        #     if df[i].nunique() > 5:
+        #         ax.set_xticklabels(ax.get_xticklabels(), rotation=25)
+        #     for p in ax.patches:
+        #         ax.annotate('{:.1f}'.format(p.get_height()), (p.get_x(), p.get_height() + 5))
+        #     plt.axis()
+        #
+        #     png_file_name = folder + os.sep + i + ".png"
+        #     plt.savefig(png_file_name)
+        #     plt.close()
+        #     png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + i + '.png')
+
+        sns.set(style="whitegrid")
+
+        # Define the folder to save the PNG files
+        output_folder = os.path.join(str(user), 'graphs')
+
+        # Create the output folder if it doesn't exist
+        os.makedirs(output_folder, exist_ok=True)
         png_files_path = []
         a4_dims = (11.7, 8.27)
+
         for i in all_categorical:
+            # Create a new figure with specified dimensions
             plt.subplots(figsize=a4_dims)
-            ax = sns.countplot(x=df[i], data=df)
+
+            # Create the count plot
+            ax = sns.countplot(x=df[i], data=df, palette="Set2")
+
+            # Rotate x-axis labels for better readability if there are many unique values
             if df[i].nunique() > 5:
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=25)
+
+            # Annotate bars with count values above them
             for p in ax.patches:
                 ax.annotate('{:.1f}'.format(p.get_height()), (p.get_x(), p.get_height() + 5))
-            plt.axis()
 
-            png_file_name = folder + os.sep + i + ".png"
-            plt.savefig(png_file_name)
+            # Remove unnecessary plot axes
+            # plt.axis('off')
+
+            # Define the PNG file name
+            png_file_name = os.path.join(folder, f"{i}.png")
+
+            # Save the plot as a PNG file
+            plt.savefig(png_file_name, bbox_inches='tight', pad_inches=0.1, dpi=300)
+
+            # Close the current plot to release resources
             plt.close()
-            png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + i + '.png')
+
+            # Append the PNG file path to the list
+            png_files_path.append(os.path.abspath(png_file_name))
 
         try:
             data_corr = df.corr()
+
+            # Create the heatmap
             f, ax = plt.subplots(figsize=a4_dims)
-            # sns.heatmap(data_corr, cmap='viridis', annot=True)
-            sns.heatmap(data_corr, cmap='Blues', annot=True)
-            plt.title("Correlation between features", weight='bold', fontsize=15)
-            correlation_name = f'{folder}{os.sep}correlation_123456789.png'
-            plt.savefig(correlation_name)
-            png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + 'correlation_123456789.png')
+            sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
+
+            # Customize the plot title and labels
+            plt.title("Correlation Matrix", weight='bold', fontsize=15)
+
+            # Save the correlation plot
+            correlation_name = os.path.join(folder, 'correlation.png')
+            plt.savefig(correlation_name, bbox_inches='tight', dpi=300)
+
+            # Append the PNG file path to the list
+            png_files_path.append(os.path.abspath(correlation_name))
         except Exception as err:
             print(f"[ERROR PLOTTING]: Unable to plot the heatmap due to: {str(err)}")
 

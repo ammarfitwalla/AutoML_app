@@ -31,32 +31,36 @@
         <li><label>Below table shows 10 rows your data</label>
             {% if df_html %}
             <div>
-                {{df_html | safe}}
+                {% for df in df_html %}
+                    {{df | safe}}
+                {% endfor %}
             </div>
             {% endif %}
         </li>
 
 
-        <li><label>Below table displays short description about your data</label>
+        <h4 class="eda_heading" style="margin:30px;">SHORT DESCRIPTION</h4>
             {% if df_describe_html %}
             <div>
-                {{df_describe_html | safe}}
+                {% for df in df_describe_html %}
+                    {{df | safe}}
+                {% endfor %}
             </div>
             {% endif %}
-        </li>
-        <br>
     </ul>
 
     <div class="container" style="float:center;">
         {% if png_files_path %}
-        <ul><li><label>Graphical representations below</label></li></ul>
-        {% for graph in png_files_path %}
-        <div class="imgContainer" style="float:centre;">
-            <img src="../../media/{{graph}}" style="width:80%">
-            <!--            <img src="{{graph}}" style="width:70%">-->
-            <br>
-        </div>
-        {% endfor %}
+        <h4 class="eda_heading" style="margin:30px;">GRAPHICAL REPRESENTATION BELOW</h4>
+            {% for graph in png_files_path %}
+              {% if forloop.counter0|divisibleby:2 %}
+                <div class="imgContainer" style="display: flex; justify-content: space-evenly; margin-left:-10%;">
+              {% endif %}
+              <img src="../../media/{{ graph }}" style="width: 60%; height: auto; border:groove;">
+              {% if forloop.counter|divisibleby:2 or forloop.last %}
+                </div>
+              {% endif %}
+            {% endfor %}
         {% endif %}
 
     </div>
@@ -74,7 +78,7 @@
 
 .eda_heading{
 color: black;
-font-family: Didot, serif;
+font-family: monospace;
 font-size: 30px;
 font-weight: bold;
 margin-top: 0px;
@@ -85,6 +89,28 @@ label{
 font-size:20px;
 }
 
+.custom-table {
+    font-family: Arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #fff8ee;
+    text-align-last: center;
+}
+
+.custom-table th, .custom-table td {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+
+.custom-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.custom-table th {
+    background-color: #333;
+    color: white;
+}
 
 </style>
 
