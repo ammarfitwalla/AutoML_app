@@ -19,7 +19,8 @@
 
 <form method="post" enctype="multipart/form-data" action="/upload/">
     {% csrf_token %}
-    <h3>Upload your file (.csv/.xlsx)</h3>
+    <h2 class="eda_heading" style="margin:30px;">DATASET UPLOAD (.csv/.xlsx)</h2>
+<!--    <h3>Upload your file (.csv/.xlsx)</h3>-->
     <br>
     <div class="form-group">
         <input type="file" name="myFile" class="form-control" accept=".csv">
@@ -27,15 +28,12 @@
 
     <button type="submit" name="custom_file" class="btn btn-primary">Upload</button>
 
-    <br>
-    <br>
-
     <div style="margin-top: 3%;" class="form-group">
 
-        <h3><i style="font-size:24px" class="fa">&#xf05a;</i> You can also select below dataset to Explore, Process, Train and Predict.</h3>
-    </div>
+<!--        <h3><i style="font-size:24px" class="fa">&#xf05a;</i> You can also select below dataset to Explore, Process, Train and Predict.</h3>-->
+    <h2 class="eda_heading" style="margin:30px;">EXISTING DATASET</h2>
 
-    <br>
+    </div>
     <br>
 
     <h4><b>Titanic</b> - Predict whether a passenger in Titanic will survive or not.</h4>
@@ -72,5 +70,19 @@
     </div>
 
 </form>
+
+<style>
+.eda_heading{
+color: black;
+font-family: monospace;
+font-weight: bold;
+margin-bottom: 1px;
+text-align: center;
+}
+
+label{
+font-size:20px;
+}
+</style>
 
 {% endblock %}

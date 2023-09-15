@@ -21,17 +21,14 @@
                     <span class="sr-only">(current)</span>
                 </a>
             </li>
-            {% if not request.user.is_authenticated %}
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'signup' %}">Sign up</a>
-            </li>
-            {% endif %}
 
-            {% if request.user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link" href="/upload/">Upload</a>
             </li>
 
+
+
+            {% if request.user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'profile_data' %}">Profile</a>
             </li>
@@ -52,7 +49,8 @@
                    {{ request.user }}
                 </div>
             {% else %}
-                <a class="btn btn-outline-white btn-md my-2 my-sm-0 ml-3" href="{% url 'signin' %}">Login</a>
+            <a class="btn btn-outline-white btn-md my-2 my-sm-0 ml-3" href="{% url 'signup' %}">Sign up</a>
+            <a class="btn btn-outline-white btn-md my-2 my-sm-0 ml-3" href="{% url 'signin' %}">Login</a>
             {% endif %}
         </div>        
     </div>

@@ -5,6 +5,8 @@ import glob
 import json
 import pickle
 import shutil
+import uuid
+
 import chardet
 # import logging
 import mimetypes
@@ -57,6 +59,11 @@ def home(request):
     return render(request, 'home.html')
 
 
+def continue_as_guest(request):
+    request.session['guest_session_id'] = str(uuid.uuid4())
+    return redirect('/upload/')
+
+
 def sign_up(request):
     if request.method == "POST":
         username = request.POST.get('username')
@@ -87,8 +94,10 @@ def sign_up(request):
 
         custom_user = Profile(user=user)
         custom_user.save()
-        messages.success(request, 'Account created, please login here')
-        return redirect('/signin/')
+        user = authenticate(username=username, password=password)
+        login(request, user)
+        messages.success(request, 'Account created, Successfully Logged in')
+        return redirect('/upload/')
 
     return render(request, 'signup.html')
 
@@ -135,14 +144,13 @@ def download_file(request, filename):
     return response
 
 
-@decorators.login_required
+# @decorators.login_required
 def upload(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
+    if 'guest_session_id' not in request.session and not request.user.is_authenticated:
+        return redirect('/signin/')
 
     elif request.method == 'POST':
-        user = str(request.user.id)
-
+        user = request.session['guest_session_id'] if request.session['guest_session_id'] else str(request.user.id)
         check_dir_exists(media_path + os.sep + user)
         check_dir_exists(media_path + os.sep + user + os.sep + 'documents')
         check_dir_exists(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
@@ -214,9 +222,12 @@ def divide_columns_into_df(df):
 
     return dfs
 
-@decorators.login_required
+# @decorators.login_required
 def eda(request):
-    user = request.user.id
+    if 'guest_session_id' not in request.session and not request.user.is_authenticated:
+        return redirect('/signin/')
+
+    user = request.session['guest_session_id'] if request.session['guest_session_id'] else request.user.id
 
     if user is not None:
         file_path = os.path.join(media_path, str(user), 'documents', 'input_files')
@@ -277,10 +288,10 @@ def eda(request):
         sns.set(style="whitegrid")
 
         # Define the folder to save the PNG files
-        output_folder = os.path.join(str(user), 'graphs')
+        # output_folder = os.path.join(str(user), 'graphs')
 
         # Create the output folder if it doesn't exist
-        os.makedirs(output_folder, exist_ok=True)
+        # os.makedirs(output_folder, exist_ok=True)
         png_files_path = []
         a4_dims = (11.7, 8.27)
 
@@ -342,9 +353,13 @@ def eda(request):
         return redirect('/signin/')
 
 
-@decorators.login_required
+# @decorators.login_required
 def data_preprocessing(request):
-    user = request.user.id
+    if 'guest_session_id' not in request.session and not request.user.is_authenticated:
+        return redirect('/signin/')
+
+    user = request.session['guest_session_id'] if request.session['guest_session_id'] else request.user.id
+    # user = request.user.id
     docs_path = os.path.join(media_path, str(user), 'documents')
     file_path = os.path.join(docs_path, 'input_files')
     list_of_files = glob.glob(file_path + os.sep + '*')
@@ -445,12 +460,16 @@ def data_preprocessing(request):
     return render(request, 'data_preprocessing.html', context)
 
 
-@decorators.login_required
+# @decorators.login_required
 def model_selection(request):
     all_ml_models = ['(AutoML) Regression', 'Linear Regression', '(AutoML) Classification', 'Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier']
     # automl_model_type = []
     # numerical_model_name_list = []
-    user = str(request.user.id)
+    # user = str(request.user.id)
+    if 'guest_session_id' not in request.session and not request.user.is_authenticated:
+        return redirect('/signin/')
+
+    user = request.session['guest_session_id'] if request.session['guest_session_id'] else str(request.user.id)
     # if request.is_ajax():
     #     print('AJAX REQUEST')
     #     data = request.GET.get('data')
@@ -582,9 +601,13 @@ def model_selection(request):
     return render(request, 'model_selection.html', context)  # except:  #     return redirect('/eda/')
 
 
-@decorators.login_required
+# @decorators.login_required
 def model_evaluation(request):
-    user = str(request.user.id)
+    if 'guest_session_id' not in request.session and not request.user.is_authenticated:
+        return redirect('/signin/')
+
+    user = request.session['guest_session_id'] if request.session['guest_session_id'] else str(request.user.id)
+    # user = str(request.user.id)
     docs_path = media_path + os.sep + user + os.sep + 'documents'
     if not os.path.isfile(docs_path + os.sep + 'model_details.json'):
         return redirect('/upload/')
@@ -651,8 +674,14 @@ def model_evaluation(request):
     return render(request, 'model_evaluation.html', context)
 
 
-@decorators.login_required
+# @decorators.login_required
 def save_model(request):
+    if 'guest_session_id' in request.session and not request.user.is_authenticated:
+        messages.error(request, 'Create an account to save the model.')
+        return redirect('/model_evaluation/')
+    elif 'guest_session_id' not in request.session and not request.user.is_authenticated:
+        return redirect('/signin/')
+
     user_id = request.user.id
     user = User.objects.get(id=user_id)
     docs_path = media_path + os.sep + str(user_id) + os.sep + 'documents'
