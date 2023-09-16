@@ -150,7 +150,7 @@ def upload(request):
         return redirect('/signin/')
 
     elif request.method == 'POST':
-        user = request.session['guest_session_id'] if request.session['guest_session_id'] else str(request.user.id)
+        user = str(request.user.id) if request.user.id else request.session['guest_session_id']
         check_dir_exists(media_path + os.sep + user)
         check_dir_exists(media_path + os.sep + user + os.sep + 'documents')
         check_dir_exists(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
@@ -227,7 +227,7 @@ def eda(request):
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
-    user = request.session['guest_session_id'] if request.session['guest_session_id'] else request.user.id
+    user = request.user.id if request.user.id else request.session['guest_session_id']
 
     if user is not None:
         file_path = os.path.join(media_path, str(user), 'documents', 'input_files')
@@ -263,7 +263,7 @@ def eda(request):
         # object_categorical = [col for col in df.columns if
         #                       df[col].dtype == 'O' and df[col].nunique() < df.shape[0] // 5]
 
-        all_categorical = [col for col in df.columns if df[col].nunique() < 15]
+        all_categorical = [col for col in df.columns if 1 < df[col].nunique() < 15]
         # object_categorical = [col for col in df.columns if df[col].dtype == 'O' and df[col].nunique() < 15]
 
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
@@ -358,7 +358,7 @@ def data_preprocessing(request):
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
-    user = request.session['guest_session_id'] if request.session['guest_session_id'] else request.user.id
+    user = request.user.id if request.user.id else request.session['guest_session_id']
     # user = request.user.id
     docs_path = os.path.join(media_path, str(user), 'documents')
     file_path = os.path.join(docs_path, 'input_files')
@@ -469,7 +469,7 @@ def model_selection(request):
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
-    user = request.session['guest_session_id'] if request.session['guest_session_id'] else str(request.user.id)
+    user = str(request.user.id) if request.user.id else request.session['guest_session_id']
     # if request.is_ajax():
     #     print('AJAX REQUEST')
     #     data = request.GET.get('data')
@@ -606,8 +606,7 @@ def model_evaluation(request):
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
-    user = request.session['guest_session_id'] if request.session['guest_session_id'] else str(request.user.id)
-    # user = str(request.user.id)
+    user = str(request.user.id) if request.user.id else request.session['guest_session_id']
     docs_path = media_path + os.sep + user + os.sep + 'documents'
     if not os.path.isfile(docs_path + os.sep + 'model_details.json'):
         return redirect('/upload/')
@@ -677,7 +676,7 @@ def model_evaluation(request):
 # @decorators.login_required
 def save_model(request):
     if 'guest_session_id' in request.session and not request.user.is_authenticated:
-        messages.error(request, 'Create an account to save the model.')
+        messages.warning(request, 'Create an account to save the model.')
         return redirect('/model_evaluation/')
     elif 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
@@ -688,6 +687,7 @@ def save_model(request):
     graphs_path = media_path + os.sep + str(user_id) + os.sep + 'graphs'
     if user:
         if not os.path.isfile(docs_path + os.sep + 'model_details.json'):
+            print('here')
             return redirect('/upload/')
         file = open(docs_path + os.sep + 'model_details.json')
         json_file = json.load(file)

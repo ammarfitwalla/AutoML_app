@@ -17,6 +17,7 @@
 
 <div class="animated fadeIn text-muted">
     <h3 class="eda_heading">EXPLORATORY DATA ANALYSIS</h3>
+    <hr class="solid" style="border-top: 3px dotted #bbb">
     <br>
     <ul>
 
@@ -28,6 +29,7 @@
             {% endfor %}
         </li>
         <br>
+<!--        <h4 class="eda_heading" style="margin:30px;">10 ROWS OF DATASET</h4>-->
         <li><label>Below table shows 10 rows your data</label>
             {% if df_html %}
             <div>
@@ -67,7 +69,7 @@
 
     <form method="POST">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary btn-sm">Start Preprocessing</button>
+        <button style="display: block; margin: 5% auto;" type="submit" class="btn btn-primary btn-sm">Start Preprocessing</button>
     </form>
     <div style="padding-top:10%;" class="flex-center flex-column">
         <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
@@ -79,12 +81,12 @@
 .eda_heading{
 color: black;
 font-family: monospace;
-font-size: 30px;
 font-weight: bold;
 margin-top: 0px;
 margin-bottom: 1px;
 text-align: center;
 }
+
 label{
 font-size:20px;
 }

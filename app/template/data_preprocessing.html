@@ -3,6 +3,17 @@
 {% block content %}
 
 <style>
+
+.eda_heading{
+color: black;
+font-family: monospace;
+font-weight: bold;
+margin-top: 0px;
+margin-bottom: 1px;
+text-align: center;
+}
+
+
 .multiselect {
   width: 200px;
 }
@@ -37,15 +48,6 @@
   background-color: #1e90ff;
 }
 
-.eda_heading{
-color: black;
-font-family: Didot, serif;
-font-size: 30px;
-font-weight: bold;
-margin-top: 0px;
-margin-bottom: 1px;
-text-align: center;
-}
 label{
 font-size:20px;
 }
@@ -135,7 +137,7 @@ td, th {
     <!--------------------------------- PREPROCESSING --------------------------------->
 
     <h3 class="eda_heading">DATA PREPROCESSING</h3>
-    <br><br>
+    <hr class="solid" style="border-top: 3px dotted #bbb">
 
     <!--------------------------------- TARGET COLUMN --------------------------------->
 
@@ -246,7 +248,7 @@ td, th {
                 </li>
             </ul>
         </div>
-        <button type="submit" class="btn btn-primary btn-sm">choose model</button>
+        <button style="display: block; margin: 5% auto;" type="submit" class="btn btn-primary btn-sm">choose model</button>
         <br>
     </form>
 
@@ -278,32 +280,6 @@ function showCheckboxes() {
     expanded = false;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </script>
 
 {% endblock %}

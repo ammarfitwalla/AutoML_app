@@ -19,6 +19,9 @@
 <br>
 
 <div>
+
+    <h3 class="eda_heading">PROFILE</h3>
+    <hr class="solid" style="border-top: 3px dotted #bbb">
     <form method="POST">
         {% csrf_token %}
 
@@ -41,5 +44,18 @@
         </div>
     </form>
 </div>
+
+<style>
+
+.eda_heading{
+color: black;
+font-family: monospace;
+font-weight: bold;
+margin-top: 0px;
+margin-bottom: 1px;
+text-align: center;
+}
+
+</style>
 
 {% endblock %}

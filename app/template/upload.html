@@ -19,8 +19,10 @@
 
 <form method="post" enctype="multipart/form-data" action="/upload/">
     {% csrf_token %}
+
     <h2 class="eda_heading" style="margin:30px;">DATASET UPLOAD (.csv/.xlsx)</h2>
 <!--    <h3>Upload your file (.csv/.xlsx)</h3>-->
+
     <br>
     <div class="form-group">
         <input type="file" name="myFile" class="form-control" accept=".csv">
@@ -30,8 +32,11 @@
 
     <div style="margin-top: 3%;" class="form-group">
 
-<!--        <h3><i style="font-size:24px" class="fa">&#xf05a;</i> You can also select below dataset to Explore, Process, Train and Predict.</h3>-->
+    <hr style="border-top: 3px dotted #bbb">
+
+        <!--        <h3><i style="font-size:24px" class="fa">&#xf05a;</i> You can also select below dataset to Explore, Process, Train and Predict.</h3>-->
     <h2 class="eda_heading" style="margin:30px;">EXISTING DATASET</h2>
+
 
     </div>
     <br>
@@ -83,6 +88,8 @@ text-align: center;
 label{
 font-size:20px;
 }
+
+
 </style>
 
 {% endblock %}
