@@ -32,3 +32,4 @@ typing_extensions==4.3.0
 tzdata==2022.2
 whitenoise==6.2.0
 wincertstore==0.2
+xgboost==1.6.2
