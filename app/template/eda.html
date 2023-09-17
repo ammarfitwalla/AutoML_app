@@ -58,7 +58,7 @@
               {% if forloop.counter0|divisibleby:2 %}
                 <div class="imgContainer" style="display: flex; justify-content: space-evenly; margin-left:-10%;">
               {% endif %}
-              <img src="../../media/{{ graph }}" style="width: 60%; height: auto; border:groove;">
+              <img class="imgContainerClass" src="../../media/{{ graph }}" style="width: 60%; height: auto; border:groove;">
               {% if forloop.counter|divisibleby:2 or forloop.last %}
                 </div>
               {% endif %}
@@ -112,6 +112,21 @@ font-size:20px;
 .custom-table th {
     background-color: #333;
     color: white;
+}
+
+@media (max-width: 600px) {
+.imgContainer{
+    display: flex;
+    justify-content: space-evenly;
+    margin-left: -10%;
+    flex-direction: column;
+}
+
+.imgContainerClass{
+width: 100%;
+height: auto;
+border:groove;
+}
 }
 
 </style>

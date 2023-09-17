@@ -20,7 +20,7 @@
 <form method="post" enctype="multipart/form-data" action="/upload/">
     {% csrf_token %}
 
-    <h2 class="eda_heading" style="margin:30px;">DATASET UPLOAD (.csv/.xlsx)</h2>
+    <h2 class="eda_heading" >DATASET UPLOAD (.csv/.xlsx)</h2>
 <!--    <h3>Upload your file (.csv/.xlsx)</h3>-->
 
     <br>
@@ -30,12 +30,12 @@
 
     <button type="submit" name="custom_file" class="btn btn-primary">Upload</button>
 
-    <div style="margin-top: 3%;" class="form-group">
+    <div style="margin-top: 2%;" class="form-group">
 
     <hr style="border-top: 3px dotted #bbb">
 
         <!--        <h3><i style="font-size:24px" class="fa">&#xf05a;</i> You can also select below dataset to Explore, Process, Train and Predict.</h3>-->
-    <h2 class="eda_heading" style="margin:30px;">EXISTING DATASET</h2>
+    <h2 class="eda_heading">EXISTING DATASET</h2>
 
 
     </div>
@@ -69,8 +69,8 @@
         <button type="submit" name="salary.csv" class="btn btn-primary">Upload</button>
         <button type="submit" name="salary.csv_download" class="btn btn-primary">Download</button>
 
-        <div style="padding-top:10%;" class="flex-center flex-column">
-            <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
+        <div style="padding-top:5%;" class="flex-center flex-column">
+            <h5 class="animated fadeIn mb-3">ammar fitwalla - Neo-moment</h5>
         </div>
     </div>
 
@@ -81,14 +81,12 @@
 color: black;
 font-family: monospace;
 font-weight: bold;
-margin-bottom: 1px;
 text-align: center;
 }
 
 label{
 font-size:20px;
 }
-
 
 </style>
 
