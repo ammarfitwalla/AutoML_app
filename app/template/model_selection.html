@@ -16,7 +16,8 @@
 {% endfor %}
 {% endif %}
 
-<br>
+<h3 class="eda_heading">MACHINE LEARNING</h3>
+<hr style="border-top: 3px dotted #bbb; margin-bottom:3%;">
 <form method="POST">
     {% csrf_token %}
     <div>
@@ -81,7 +82,42 @@ $(document).ready(function(){
     });
 });
 
-
-
 </script>
+
+
+<style>
+.eda_heading{
+color: black;
+font-family: monospace;
+font-weight: bold;
+margin-top: 0px;
+margin-bottom: 1px;
+text-align: center;
+}
+
+.custom-table {
+    font-family: Arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #fff8ee;
+    text-align-last: center;
+}
+
+.custom-table th, .custom-table td {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+
+.custom-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.custom-table th {
+    background-color: #333;
+    color: white;
+}
+
+
+</style>
 {% endblock script %}

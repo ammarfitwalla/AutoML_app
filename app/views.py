@@ -483,6 +483,7 @@ def model_selection(request):
     file = open(docs_path + os.sep + 'df_preprocessed.json')
     json_file = json.load(file)
     dependent_variable = json_file['dependent_variable']
+    print("dependent_variable", dependent_variable)
     dependent_variable_type = json_file['dependent_variable_type']
     test_size_ratio = json_file['test_size_ratio']
 
@@ -555,9 +556,9 @@ def model_selection(request):
                 X_test = p_X_test
 
             actual_pred_df = X_test.copy()
-            actual_pred_df['Actual output'] = y_test
-            actual_pred_df['Predicted output'] = model_details['predictions']
-            actual_pred_df = actual_pred_df.to_html(classes="table table-striped table-hover", index=False)
+            actual_pred_df[dependent_variable] = y_test
+            actual_pred_df[dependent_variable + ' (Predictions)'] = model_details['predictions']
+            actual_pred_df = actual_pred_df.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False)
 
             with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'model', 'wb') as files:
                 pickle.dump(model, files)
@@ -667,7 +668,7 @@ def model_evaluation(request):
         png_file_name_ = None
 
     df_ev = pd.DataFrame(my_data, columns=['Metrics', 'Values'])
-    df_to_html = df_ev.to_html(classes="table table-striped table-hover", index=False)
+    df_to_html = df_ev.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False)
 
     context = {'model_name': model_name, 'df': df_to_html, 'fig': png_file_name_, }
     return render(request, 'model_evaluation.html', context)
