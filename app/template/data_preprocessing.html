@@ -20,25 +20,26 @@
     <!--------------------------------- PREPROCESSING --------------------------------->
 
     <h3 class="eda_heading">DATA PREPROCESSING</h3>
-    <hr class="solid" style="border-top: 3px dotted #bbb">
 
     <!--------------------------------- TARGET COLUMN --------------------------------->
 
     <form method="POST">
-
         {% csrf_token %}
-        <ul>
-            <li><label><b>Select the column you want to predict : </b></label>
-                <select id="dep_var" name="dep_var_name">
-                    {% for col in df_cols %}
-                    <option value="{{col}}" name="response">{{col}}</option>
-                    {% endfor %}
-                </select>
-            </li>
-        </ul>
+        <div class="card">
+            <ul>
+                <li><label><b>Select the column you want to predict : </b></label>
+                    <select id="dep_var" name="dep_var_name">
+                        {% for col in df_cols %}
+                        <option value="{{col}}" name="response">{{col}}</option>
+                        {% endfor %}
+                    </select>
+                </li>
+            </ul>
+        </div>
         <br>
 
         <!--------------------------------- DROPPING COLUMNS --------------------------------->
+        <div class="card">
         <ul>
             <li>
                 <label><b>Select the columns you want to drop: </b></label>
@@ -51,11 +52,13 @@
                 </div>
             </li>
         </ul>
+        </div>
         <br>
 
         <!--------------------------------- HANDLE NAN VALUES --------------------------------->
 
         {% if string_cols or nan_columns %}
+        <div class="card">
         <ul>
             <li><label><b>Handle NULL values in dataset<a class="button" href="#popup1">&#9432;</a></b></label></li>
                 <div id="popup1" class="overlay">
@@ -114,12 +117,13 @@
                     </table>
                 {% endif %}
         </ul>
+        </div>
         {% endif %}
 
         <br>
 
         <!--------------------------------- TRAIN TEST SPLIT --------------------------------->
-
+        <div class="card">
         <div class="slidecontainer">
             <ul>
                 <div id="train_ratio" class="value">70 %</div>
@@ -129,6 +133,7 @@
                     <br>
                 </li>
             </ul>
+        </div>
         </div>
         <button style="display: block; margin: 5% auto;" type="submit" class="btn btn-primary btn-sm">choose model</button>
         <br>
@@ -240,6 +245,25 @@ text-align: center;
   .popup{
     width: 70%;
   }
+}
+
+.card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    transition: 0.2s;
+    border-radius: 10px;
+    padding: 1.1%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    border-color: #445e78!important;
+    border-top: medium;
+}
+.card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+
+.container {
+  padding: 2px 16px;
 }
 </style>
 

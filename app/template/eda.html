@@ -16,58 +16,56 @@
 {% endif %}
 
 <div class="animated fadeIn text-muted">
-    <h3 class="eda_heading">EXPLORATORY DATA ANALYSIS</h3>
-    <hr class="solid" style="border-top: 3px dotted #bbb">
-    <br>
-    <ul>
+    <h3 class="eda_heading" style="margin-bottom:30px;">EXPLORATORY DATA ANALYSIS (EDA)</h3>
     <div class="card">
-
-        <li><label>Your data has <b>{{ df_n_rows }} rows</b> and <b>{{ df_n_cols }} columns</b> </label></li>
-        <br>
-        <li><label>The column names are: </label>
-            {% for col in df_cols %}
-            <label><h5><b>{{col}}, </b></h5></label>
-            {% endfor %}
-        </li>
+        <ul>
+            <li><label>Your data has <b>{{ df_n_rows }} rows</b> and <b>{{ df_n_cols }} columns</b> </label></li>
+            <li><label>The column names are: </label>
+                {% for col in df_cols %}
+                <label><b>{{col}}, </b></label>
+                {% endfor %}
+            </li>
+        </ul>
+    
     </div>
-        <br>
-<!--        <h4 class="eda_heading" style="margin:30px;">10 ROWS OF DATASET</h4>-->
-        <li><label>Below table shows 10 rows your data</label>
-            {% if df_html %}
-            <div>
-                {% for df in df_html %}
-                    {{df | safe}}
-                {% endfor %}
-            </div>
-            {% endif %}
-        </li>
 
+    <div class="card">
+    <h4 class="eda_heading" style="margin:10px;">10 DATASET ROWS</h4>
+        {% if df_html %}
+        <div>
+            {% for df in df_html %}
+            {{df | safe}}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
 
-        <h4 class="eda_heading" style="margin:30px;">SHORT DESCRIPTION</h4>
-            {% if df_describe_html %}
-            <div>
-                {% for df in df_describe_html %}
-                    {{df | safe}}
-                {% endfor %}
-            </div>
-            {% endif %}
-    </ul>
+    <div class="card">
+        <h4 class="eda_heading" style="margin:10px;">SHORT DESCRIPTION</h4>
+        {% if df_describe_html %}
+        <div>
+            {% for df in df_describe_html %}
+            {{df | safe}}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
 
     <div class="container" style="float:center;">
         {% if png_files_path %}
         <h4 class="eda_heading" style="margin:30px;">GRAPHICAL REPRESENTATION BELOW</h4>
-            {% for graph in png_files_path %}
-              {% if forloop.counter0|divisibleby:2 %}
-                <div class="imgContainer" style="display: flex; justify-content: space-evenly; margin-left:-10%;">
-              {% endif %}
-              <img class="imgContainerClass" src="../../media/{{ graph }}" style="width: 60%; height: auto; border:groove;">
-              {% if forloop.counter|divisibleby:2 or forloop.last %}
-                </div>
-              {% endif %}
-            {% endfor %}
+        {% for graph in png_files_path %}
+        {% if forloop.counter0|divisibleby:2 %}
+        <div class="imgContainer" style="display: flex; justify-content: space-evenly; margin-left:-10%;">
+            {% endif %}
+            <img class="imgContainerClass" src="../../media/{{ graph }}"
+                 style="width: 55%; height: auto; border:groove;">
+            {% if forloop.counter|divisibleby:2 or forloop.last %}
+        </div>
+        {% endif %}
+        {% endfor %}
         {% endif %}
     </div>
-
     {% if corelation_explanation %}
     <ul>
         {% for explanation in corelation_explanation %}
@@ -78,7 +76,9 @@
 
     <form method="POST">
         {% csrf_token %}
-        <button style="display: block; margin: 5% auto;" type="submit" class="btn btn-primary btn-sm">Start Preprocessing</button>
+        <button style="display: block; margin: 5% auto;" type="submit" class="btn btn-primary btn-sm">Start
+            Preprocessing
+        </button>
     </form>
     <div style="padding-top:10%;" class="flex-center flex-column">
         <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
@@ -87,19 +87,16 @@
 
 <style>
 .card {
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-  transition: 0.2s;
-  border-radius: 10px;
-  padding: 1.1%;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: space-evenly;
-  margin-bottom:15px;
-  border-color: #445e78!important;
-  border-top: medium;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    transition: 0.2s;
+    border-radius: 10px;
+    padding: 1.1%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    border-color: #445e78!important;
+    border-top: medium;
 }
-
 .card:hover {
   box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
 }
@@ -107,6 +104,7 @@
 .container {
   padding: 2px 16px;
 }
+
 </style>
 {% endblock %}
 
