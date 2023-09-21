@@ -2,123 +2,6 @@
 
 {% block content %}
 
-<style>
-
-.eda_heading{
-color: black;
-font-family: monospace;
-font-weight: bold;
-margin-top: 0px;
-margin-bottom: 1px;
-text-align: center;
-}
-
-
-.multiselect {
-  width: 200px;
-}
-
-.selectBox {
-  position: relative;
-}
-
-.selectBox select {
-  width: 100%;
-  font-weight: bold;
-}
-
-.overSelect {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-}
-
-#checkboxes {
-  display: none;
-  border: 1px #dadada solid;
-}
-
-#checkboxes label {
-  display: block;
-}
-
-#checkboxes label:hover {
-  background-color: #1e90ff;
-}
-
-label{
-font-size:20px;
-}
-select {
-        padding: 5px 35px 5px 5px;
-        font-size: 15px;
-        border: 2px solid #ccc;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-      }
-.value {
-  border-bottom: 4px dashed #bdc3c7;
-  text-align: center;
-  font-weight: bold;
-  font-size: 4em;
-  width: 300px;
-  height: 100px;
-  line-height: 60px;
-  margin: 20px auto;
-  letter-spacing: -.07em;
-  text-shadow: white 2px 2px 2px;
-}
-input[type="range"] {
-  display: block;
-  -webkit-appearance: none;
-  background-color: #bdc3c7;
-  width: 300px;
-  height: 5px;
-  border-radius: 5px;
-  margin: 0 auto;
-  outline: 0;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  background-color: #e74c3c;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 2px solid white;
-  cursor: pointer;
-  transition: .3s ease-in-out;
-}​
-  input[type="range"]::-webkit-slider-thumb:hover {
-    background-color: white;
-    border: 2px solid #e74c3c;
-  }
-  input[type="range"]::-webkit-slider-thumb:active {
-    transform: scale(1.6);
-  }
-
-table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-td, th {
-  border: 1px solid #dddddd;
-  text-align: left;
-  padding: 8px;
-}
-
-.checkbox div{
-  display: inline;
-}
-
-
-
-</style>
-
 <div class="animated fadeIn text-muted">
 
     {% if messages %}
@@ -174,63 +57,62 @@ td, th {
 
         {% if string_cols or nan_columns %}
         <ul>
-            <li><label><b>Select how you want to handle NULL Values in column(s)</b></label></li>
-            <details>
-                <summary>Information about replacing null values</summary>
-                <ul>
-                    <li><h6><b>bfill</b>: Replaces null values with previous value</h6></li>
-                    <li><h6><b>ffill</b>: Replaces null values with next value</h6></li>
-                    <li><h6><b>0</b>: Replaces null values with 0</h6></li>
-                    <li><h6><b>delete records</b>: Deletes all the null value rows</h6></li>
-                    <li><h6><b>mean</b>: Replaces null values with mean value (works with numerical data)</h6></li>
-                    <li><h6><b>median</b>: Replaces null values with median value (works with numerical data)</h6></li>
-                </ul>
-            </details>
-            <br>
-            <div>
+            <li><label><b>Handle NULL values in dataset<a class="button" href="#popup1">&#9432;</a></b></label></li>
+                <div id="popup1" class="overlay">
+                    <div class="popup">
+                        <h4>Information about replacing null values</h4>
+                        <a class="close" href="#">&times;</a>
+                        <div class="content">
+                            <ul>
+                                <li><h6><b>bfill</b>: Replaces null values with previous value</h6></li>
+                                <li><h6><b>ffill</b>: Replaces null values with next value</h6></li>
+                                <li><h6><b>0</b>: Replaces null values with 0</h6></li>
+                                <li><h6><b>delete records</b>: Deletes all the null value rows</h6></li>
+                                <li><h6><b>mean</b>: Replaces null values with mean value (works with numerical data)</h6></li>
+                                <li><h6><b>median</b>: Replaces null values with median value (works with numerical data)</h6></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
                 {% if string_cols %}
-                <h5>String Column(s)</h5>
+                    <table>
+                        {% for str_col, str_col_count in string_cols %}
+                        <tr>
+                            <td><label><b>{{ str_col }} {{ str_col_count }}</b></label></td>
+                            {% for str_way in list_handle_nan_str_values %}
+                            <td>
+                                <div>
+                                    <input type="radio" id="{{str_way}}" name="{{str_col}}" value="{{str_way}}"
+                                           required>
+                                    <label for="{{str_way}}">{{str_way}}</label><br>
+                                </div>
+                                {% endfor %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    </table>
                 {% endif %}
 
-                <table>
-                    {% for str_col in string_cols %}
-                    <tr>
-                        <td><label><b>{{ str_col }}</b></label></td>
-                        {% for str_way in list_handle_nan_str_values %}
-                        <td>
-                            <div>
-                                <input type="radio" id="{{str_way}}" name="{{str_col}}" value="{{str_way}}"
-                                       required>
-                                <label for="{{str_way}}">{{str_way}}</label><br>
-                            </div>
-                            {% endfor %}
-                            {% endfor %}
-                        </td>
-                    </tr>
-                </table>
                 <br>
 
                 {% if nan_columns %}
-                <h5>Numerical Column(s)</h5>
-                <table>
-
-                    {% for null_column in nan_columns %}
-                    <tr>
-                        <td><label><b>{{ null_column }}</b></label></td>
-                        {% for way in list_handle_nan_values %}
-
-                        <td>
-                            <div>
-                                <input type="radio" id="{{way}}" name="{{null_column}}" value="{{way}}" required>
-                                <label for="{{way}}">{{way}}</label><br>
-                            </div>
-                            {% endfor %}
-                            {% endfor %}
-                        </td>
-                    </tr>
-                    {% endif %}
-                </table>
-            </div>
+                    <table>
+                        {% for null_column, null_column_count in nan_columns %}
+                        <tr>
+                            <td><label><b>{{ null_column }} {{ null_column_count }}</b></label></td>
+                            {% for way in list_handle_nan_values %}
+                            <td>
+                                <div>
+                                    <input type="radio" id="{{way}}" name="{{null_column}}" value="{{way}}" required>
+                                    <label for="{{way}}">{{way}}</label><br>
+                                </div>
+                                {% endfor %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    </table>
+                {% endif %}
         </ul>
         {% endif %}
 
@@ -281,5 +163,84 @@ function showCheckboxes() {
   }
 }
 </script>
+
+<style>
+.box {
+width: 40%;
+margin: 0 auto;
+background: rgba(255,255,255,0.2);
+padding: 50px;
+border: 2px solid #fff;
+border-radius: 20px/50px;
+background-clip: padding-box;
+text-align: center;
+}
+
+.button {
+  font-size: 1em;
+  padding: 10px;
+  color: #eb5c5c;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease-out;
+}
+
+
+.overlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  transition: opacity 500ms;
+  visibility: hidden;
+  opacity: 0;
+}
+.overlay:target {
+  visibility: visible;
+  opacity: 1;
+}
+
+.popup {
+  margin: 50px auto;
+  padding: 30px;
+  background: #fff;
+  border-radius: 5px;
+  width: 45%;
+  position: relative;
+  transition: all 5s ease-in-out;
+}
+
+.popup h2 {
+  margin-top: 0;
+  color: #333;
+  font-family: Tahoma, Arial, sans-serif;
+}
+.popup .close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  transition: all 200ms;
+  font-size: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #333;
+}
+
+.popup .content {
+  max-height: 40%;
+  overflow: auto;
+}
+
+@media screen and (max-width: 700px){
+  .box{
+    width: 70%;
+  }
+  .popup{
+    width: 70%;
+  }
+}
+</style>
 
 {% endblock %}

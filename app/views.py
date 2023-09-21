@@ -6,7 +6,6 @@ import json
 import pickle
 import shutil
 import uuid
-
 import chardet
 # import logging
 import mimetypes
@@ -31,10 +30,10 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 # logger = logging.getLogger(__name__)
 
-# all_ml_models = ['Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier', 'Linear Regression']
-# automl_model_type = ['(AutoML) Regression', '(AutoML) Classification']
-# numerical_model_name_list = ['Linear Regression']
 media_path = settings.MEDIA_ROOT
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+list_to_handle_nan_values = ['mean', 'median', 'bfill', 'ffill', 0, 'delete records']
+list_to_handle_nan_str_values = ['bfill', 'ffill', 0, 'delete records']
 
 plt.switch_backend('agg')
 
@@ -124,23 +123,11 @@ def logout_page(request):
 
 
 def download_file(request, filename):
-    # Define Django project base directory
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-    # path = os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1])
-    # Define text file name
-    # filename = 'test.txt'
-    # Define the full file path
     filepath = BASE_DIR + '/downloadapp/Files/' + filename
-    # Open the file for reading content
     path = open(filepath, 'r')
-    # Set the mime type
     mime_type, _ = mimetypes.guess_type(filepath)
-    # Set the return value of the HttpResponse
     response = HttpResponse(path, content_type=mime_type)
-    # Set the HTTP header for sending to browser
     response['Content-Disposition'] = "attachment; filename=%s" % filename
-    # Return the response value
     return response
 
 
@@ -196,31 +183,37 @@ def divide_columns_into_df(df):
     num_columns = len(df.columns)
     if num_columns < 8:
         return [df]
-    num_df = 2  # You can change this to divide into more dataframes if needed
+    num_df = 2
 
-    # Calculate the number of columns in each dataframe
     columns_per_df = num_columns // num_df
     remainder = num_columns % num_df
 
-    dfs = []  # List to store the divided dataframes
+    dfs = []
 
     start_col = 0
     for i in range(num_df):
-        # Calculate the end column index for the current dataframe
         end_col = start_col + columns_per_df
         if i < remainder:
-            end_col += 1  # Distribute any remaining columns
+            end_col += 1
 
-        # Slice the dataframe to get the current subset of columns
         subset_df = df.iloc[:, start_col:end_col]
-
-        # Append the subset dataframe to the list
         dfs.append(subset_df)
-
-        # Update the start column index for the next iteration
         start_col = end_col
 
     return dfs
+
+def file_to_df(file_name):
+    with open(file_name, 'rb') as rawdata:
+        result = chardet.detect(rawdata.read(10000))
+
+    with open(file_name, newline='') as csvfile:
+        dialect = csv.Sniffer().sniff(csvfile.read())
+        if dialect.delimiter == ',':
+            df = pd.read_csv(file_name, encoding=result['encoding'])  # Import the csv with a comma as the separator
+        elif dialect.delimiter == ';':
+            df = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
+
+        return df
 
 # @decorators.login_required
 def eda(request):
@@ -237,109 +230,48 @@ def eda(request):
             return redirect('/upload/')
 
         file_name = max(list_of_files, key=os.path.getmtime)
+        df = file_to_df(file_name)
 
-        with open(file_name, 'rb') as rawdata:
-            result = chardet.detect(rawdata.read(10000))
-
-        with open(file_name, newline='') as csvfile:
-            dialect = csv.Sniffer().sniff(csvfile.read())
-            if dialect.delimiter == ',':
-                df = pd.read_csv(file_name, encoding=result['encoding'])  # Import the csv with a comma as the separator
-            elif dialect.delimiter == ';':
-                df = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
-        # df = pd.read_csv(file_name, encoding=result['encoding'])
-        df_html = df.sample(10)
-        df_html = divide_columns_into_df(df_html)
+        df_html = divide_columns_into_df(df.sample(10))
         df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i in df_html]
-        df_n_rows = df.shape[0]
-        df_n_cols = df.shape[1]
-        df_cols = [column for column in df.columns]
-        df_describe = df.describe()
-        df_describe = divide_columns_into_df(df_describe)
-        # df_describe_html = [i.to_html(classes="custom-table") for i in df_describe]
+        df_n_rows, df_n_cols = df.shape[0], df.shape[1]
+        df_cols = df.columns.tolist()
+        df_describe = divide_columns_into_df(df.describe())
         df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in df_describe]
-        # all_categorical = [col for col in df.columns if df[col].nunique() < df.shape[0] // 5]
-        # print("all_categorical", all_categorical)
-        # object_categorical = [col for col in df.columns if
-        #                       df[col].dtype == 'O' and df[col].nunique() < df.shape[0] // 5]
-
         all_categorical = [col for col in df.columns if 1 < df[col].nunique() < 15]
-        # object_categorical = [col for col in df.columns if df[col].dtype == 'O' and df[col].nunique() < 15]
-
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
         check_dir_exists(folder)
 
-        # png_files_path = []
-        # a4_dims = (11.7, 8.27)
-        # for i in all_categorical:
-        #     plt.subplots(figsize=a4_dims)
-        #     ax = sns.countplot(x=df[i], data=df)
-        #     if df[i].nunique() > 5:
-        #         ax.set_xticklabels(ax.get_xticklabels(), rotation=25)
-        #     for p in ax.patches:
-        #         ax.annotate('{:.1f}'.format(p.get_height()), (p.get_x(), p.get_height() + 5))
-        #     plt.axis()
-        #
-        #     png_file_name = folder + os.sep + i + ".png"
-        #     plt.savefig(png_file_name)
-        #     plt.close()
-        #     png_files_path.append(str(user) + os.sep + 'graphs' + os.sep + i + '.png')
-
         sns.set(style="whitegrid")
 
-        # Define the folder to save the PNG files
-        # output_folder = os.path.join(str(user), 'graphs')
-
-        # Create the output folder if it doesn't exist
-        # os.makedirs(output_folder, exist_ok=True)
         png_files_path = []
         a4_dims = (11.7, 8.27)
 
         for i in all_categorical:
-            # Create a new figure with specified dimensions
             plt.subplots(figsize=a4_dims)
 
-            # Create the count plot
             ax = sns.countplot(x=df[i], data=df, palette="Set2")
 
-            # Rotate x-axis labels for better readability if there are many unique values
             if df[i].nunique() > 5:
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=25)
 
-            # Annotate bars with count values above them
             for p in ax.patches:
                 ax.annotate('{:.1f}'.format(p.get_height()), (p.get_x(), p.get_height() + 5))
 
-            # Remove unnecessary plot axes
-            # plt.axis('off')
-
-            # Define the PNG file name
             png_file_name = os.path.join(folder, f"{i}.png")
-
-            # Save the plot as a PNG file
             plt.savefig(png_file_name, bbox_inches='tight', pad_inches=0.1, dpi=300)
-
-            # Close the current plot to release resources
             plt.close()
 
-            # Append the PNG file path to the list
             png_files_path.append(os.path.abspath(png_file_name))
 
         try:
             data_corr = df.corr()
-
-            # Create the heatmap
             f, ax = plt.subplots(figsize=a4_dims)
             sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
-
-            # Customize the plot title and labels
             plt.title("Correlation Matrix", weight='bold', fontsize=15)
-
-            # Save the correlation plot
             correlation_name = os.path.join(folder, 'correlation.png')
             plt.savefig(correlation_name, bbox_inches='tight', dpi=300)
 
-            # Append the PNG file path to the list
             png_files_path.append(os.path.abspath(correlation_name))
         except Exception as err:
             print(f"[ERROR PLOTTING]: Unable to plot the heatmap due to: {str(err)}")
@@ -359,7 +291,6 @@ def data_preprocessing(request):
         return redirect('/signin/')
 
     user = request.user.id if request.user.id else request.session['guest_session_id']
-    # user = request.user.id
     docs_path = os.path.join(media_path, str(user), 'documents')
     file_path = os.path.join(docs_path, 'input_files')
     list_of_files = glob.glob(file_path + os.sep + '*')
@@ -368,44 +299,32 @@ def data_preprocessing(request):
         return redirect('/upload/')
 
     file_name = max(list_of_files, key=os.path.getmtime)  # TODO : NEED TO FIX
-
-    with open(file_name, 'rb') as rawdata:
-        result = chardet.detect(rawdata.read(10000))
-
-    with open(file_name, newline='') as csvfile:
-        dialect = csv.Sniffer().sniff(csvfile.read())
-        if dialect.delimiter == ',':
-            df_preprocessing = pd.read_csv(file_name, encoding=result['encoding'])  # Import the csv with a comma as the separator
-        elif dialect.delimiter == ';':
-            df_preprocessing = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
-
-    # df_preprocessing = pd.read_csv(file_name, encoding=result['encoding'])
+    df_preprocessing = file_to_df(file_name)
 
     df_col_numbers = df_preprocessing.shape[1]
-    df_col_names = [column for column in df_preprocessing.columns]
-    categorical_col_names = [col for col in df_preprocessing.columns if df_preprocessing[col].dtype == 'O' and df_preprocessing[col].nunique() < 15]
+    df_col_names = df_preprocessing.columns.tolist()
+    df_null_columns, all_null_columns, string_cols, string_cols_null_count, numerical_cols_null_count = [], [], [], [], []
     df_null = df_preprocessing.isnull().values.any()
-    df_null_columns = None
-    all_null_columns = None
-    string_cols = None
-    list_to_handle_nan_values = ['mean', 'median', 'bfill', 'ffill', 0, 'delete records']
-    list_to_handle_nan_str_values = ['bfill', 'ffill', 0, 'delete records']
 
     if df_null:
-        df_null_columns, string_cols = [], []
         all_null_columns = df_preprocessing.columns[df_preprocessing.isna().any()].tolist()
-
         for i in all_null_columns:
+            nan_count = " (" + str(df_preprocessing[i].isna().sum()) + " Rows)"
             if is_string_dtype(df_preprocessing[i]):
                 string_cols.append(i)
+                string_cols_null_count.append(nan_count)
             else:
                 df_null_columns.append(i)
+                numerical_cols_null_count.append(nan_count)
+
+        string_cols = zip(string_cols, string_cols_null_count) if string_cols else None
+        df_null_columns = zip(df_null_columns, numerical_cols_null_count) if df_null_columns else None
 
     if request.method == 'POST':
         dependent_variable = request.POST['dep_var_name']
         slider_value = request.POST['slider_value']
         test_size_ratio = (100 - int(slider_value)) / 100
-        # print(df_preprocessing.shape)
+        categorical_col_names = [col for col in df_preprocessing.columns if df_preprocessing[col].dtype == 'O' and df_preprocessing[col].nunique() < 15]
 
         if df_null:
             for i in all_null_columns:
@@ -422,18 +341,11 @@ def data_preprocessing(request):
                     df_preprocessing[i] = df_preprocessing[i].fillna((df_preprocessing[i].median()))
 
         selected_check_list = request.POST.getlist('checkbox_name')
-        # selected_check_list = [i.strip() for i in selected_check_list]
-        # print("----------")
-        # print(selected_check_list)
-        # print(type(selected_check_list))
-        # print("----------")
         oh_encoder = ce.OrdinalEncoder(cols=categorical_col_names)
         df_preprocessing = oh_encoder.fit_transform(df_preprocessing)
 
-        oh_encoder_params = oh_encoder.get_params()
-
         oh_encoder_dict = {}
-        for i in oh_encoder_params['mapping']:
+        for i in oh_encoder.get_params()['mapping']:
             temp_dict = i['mapping'].to_dict()
             temp_dict_in_str = json.dumps(temp_dict)
             temp_dict_lowercase = json.loads(temp_dict_in_str.lower())
@@ -456,16 +368,16 @@ def data_preprocessing(request):
         else:
             messages.error(request, 'You cannot delete prediction column')
 
-    context = {'df_null': df_null, 'nan_columns': df_null_columns, 'string_cols': string_cols, 'list_handle_nan_values': list_to_handle_nan_values, 'list_handle_nan_str_values': list_to_handle_nan_str_values, 'df_cols': df_col_names, }
+    context = {'df_null': df_null, 'nan_columns': df_null_columns,
+               'string_cols': string_cols, 'list_handle_nan_values': list_to_handle_nan_values,
+               'list_handle_nan_str_values': list_to_handle_nan_str_values, 'df_cols': df_col_names}
+
     return render(request, 'data_preprocessing.html', context)
 
 
 # @decorators.login_required
 def model_selection(request):
     all_ml_models = ['(AutoML) Regression', 'Linear Regression', '(AutoML) Classification', 'Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier']
-    # automl_model_type = []
-    # numerical_model_name_list = []
-    # user = str(request.user.id)
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
@@ -483,7 +395,6 @@ def model_selection(request):
     file = open(docs_path + os.sep + 'df_preprocessed.json')
     json_file = json.load(file)
     dependent_variable = json_file['dependent_variable']
-    print("dependent_variable", dependent_variable)
     dependent_variable_type = json_file['dependent_variable_type']
     test_size_ratio = json_file['test_size_ratio']
 
@@ -512,7 +423,6 @@ def model_selection(request):
                     classifier = True
 
                 automl_model_name, model = get_automl_model(model_name.lower(), X_train, y_train)
-                # used_model.append([user, automl_model_name])
                 model_details['model_name'] = automl_model_name
 
             else:
@@ -658,7 +568,7 @@ def model_evaluation(request):
             f1 = '%.2f' % (metrics.f1_score(y_test, y_pred) * 100) + ' %'
             precision = '%.2f' % (metrics.precision_score(y_test, y_pred) * 100) + ' %'
 
-        except:
+        except (Exception,):
             messages.info(request, 'For Regression problem, use only Regression model')
             return redirect('/model_selection/')
             # return render(request, 'model_evaluation.html')
@@ -688,7 +598,6 @@ def save_model(request):
     graphs_path = media_path + os.sep + str(user_id) + os.sep + 'graphs'
     if user:
         if not os.path.isfile(docs_path + os.sep + 'model_details.json'):
-            print('here')
             return redirect('/upload/')
         file = open(docs_path + os.sep + 'model_details.json')
         json_file = json.load(file)
@@ -703,7 +612,7 @@ def save_model(request):
         y = pd.read_csv(docs_path + os.sep + 'y.csv')
         y.drop(columns=y.columns[0], axis=1, inplace=True)
 
-        X_cols = [column for column in X.columns]
+        X_cols = X.columns.tolist()
         if request.method == 'POST':
             project_name = request.POST.get('project_name')
             pickle_file = pickle.dumps(model)
@@ -737,10 +646,6 @@ def save_model(request):
             shutil.rmtree(docs_path)
             shutil.rmtree(graphs_path)
 
-            # check_dir_exists(docs_path)
-            # check_dir_exists(graphs_path)
-            # check_dir_exists(docs_path + os.sep + 'input_files')
-
             messages.success(request, 'Your Project has been saved successfully !')
 
             return redirect('/profile_data/')
@@ -752,22 +657,13 @@ def save_model(request):
 @decorators.login_required
 def profile_data(request):
     user = str(request.user.id)
-    docs_name_list = []
-    projects_name_list = []
-    model_id = []
     if user:
         document = Document.objects.filter(user_id=user)
         if document:
-            for doc in document:
-                doc_name = str(doc).split("/")[-1]
-                model_data = TrainedModels.objects.filter(document_id=doc.id).values()
-                if model_data:
-                    for md in model_data:
-                        project_name = str(md['project_name'])
-                        docs_name_list.append(doc_name)
-                        projects_name_list.append(project_name)
-                        # print(md['id'])
-                        model_id.append(md['id'])
+            model_data = TrainedModels.objects.filter(document_id__in=document.values_list('id', flat=True)).values_list('project_name', flat=True)
+            docs_name_list = [str(doc).split("/")[-1] for doc in document]
+            projects_name_list = [str(md) for md in model_data]
+            model_id = list(model_data.values_list('id', flat=True))
 
             if request.method == 'POST':
                 button_id = request.POST.get('test_model_button')
@@ -777,7 +673,6 @@ def profile_data(request):
         else:
             context = {'document_project_name': None, }
         return render(request, 'profile_data.html', context)
-
     else:
         return redirect('/signin/')
 
