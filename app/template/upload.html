@@ -24,56 +24,83 @@
 <!--    <h3>Upload your file (.csv/.xlsx)</h3>-->
 
     <br>
+    <div class="card">
+
     <div class="form-group">
         <input type="file" name="myFile" class="form-control" accept=".csv">
     </div>
-
     <button type="submit" name="custom_file" class="btn btn-primary">Upload</button>
+    </div>
 
     <div style="margin-top: 2%;" class="form-group">
 
-    <hr style="border-top: 3px dotted #bbb">
+<!--    <hr style="border-top: 3px dotted #bbb">-->
 
-        <!--        <h3><i style="font-size:24px" class="fa">&#xf05a;</i> You can also select below dataset to Explore, Process, Train and Predict.</h3>-->
     <h2 class="eda_heading">EXISTING DATASET</h2>
 
-
     </div>
-    <br>
 
-    <h4><b>Titanic</b> - Predict whether a passenger in Titanic will survive or not.</h4>
-    <div class="buttons" style="margin: 0 auto; display: inline;">
-        <button type="submit" name="titanic.csv" class="btn btn-primary">Upload</button>
-        <button type="submit" name="titanic.csv_download" class="btn btn-primary">Download</button>
+    <div class="card">
+        <h4><b>Titanic</b> - Predict whether a passenger in Titanic will survive or not.</h4>
+        <div class="buttons" style="margin: 0 auto; display: inline;">
+            <button type="submit" name="titanic.csv" class="btn btn-primary">Upload</button>
+            <button type="submit" name="titanic.csv_download" class="btn btn-primary">Download</button>
+        </div>
+    </div>
 
-        <br>
-        <br>
-
+    <div class="card">
         <h4><b>Car Purchase</b> - Predict whether a customer will purchase a car or not.</h4>
-        <button type="submit" name="car_purchase.csv" class="btn btn-primary">Upload</button>
-        <button type="submit" name="car_purchase.csv_download" class="btn btn-primary">Download</button>
+        <div class="buttons" style="margin: 0 auto; display: inline;">
+            <button type="submit" name="car_purchase.csv" class="btn btn-primary">Upload</button>
+            <button type="submit" name="car_purchase.csv_download" class="btn btn-primary">Download</button>
+        </div>
+    </div>
 
 
-        <br>
-        <br>
-
+    <div class="card">
         <h4><b>House Price</b> - Predict California house prices.</h4>
-        <button type="submit" name="california_housing.csv" class="btn btn-primary">Upload</button>
-        <button type="submit" name="california_housing.csv_download" class="btn btn-primary">Download</button>
+        <div class="buttons" style="margin: 0 auto; display: inline;">
+            <button type="submit" name="california_housing.csv" class="btn btn-primary">Upload</button>
+            <button type="submit" name="california_housing.csv_download" class="btn btn-primary">Download</button>
+        </div>
+    </div>
 
 
-        <br>
-        <br>
-
+    <div class="card">
         <h4><b>Salary</b> - Predict Employee Salary based on experience and qualification.</h4>
-        <button type="submit" name="salary.csv" class="btn btn-primary">Upload</button>
-        <button type="submit" name="salary.csv_download" class="btn btn-primary">Download</button>
+        <div class="buttons" style="margin: 0 auto; display: inline;">
+            <button type="submit" name="salary.csv" class="btn btn-primary">Upload</button>
+            <button type="submit" name="salary.csv_download" class="btn btn-primary">Download</button>
+        </div>
+    </div>
 
         <div style="padding-top:5%;" class="flex-center flex-column">
             <h5 class="animated fadeIn mb-3">ammar fitwalla - Neo-moment</h5>
         </div>
-    </div>
 
 </form>
 
+<style>
+.card {
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  transition: 0.2s;
+  border-radius: 10px;
+  padding: 1.1%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: space-evenly;
+  margin-bottom:15px;
+  border-color: #445e78!important;
+  border-top: medium;
+}
+
+.card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+
+.container {
+  padding: 2px 16px;
+}
+</style>
 {% endblock %}

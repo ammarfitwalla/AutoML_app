@@ -146,10 +146,12 @@ def upload(request):
                 os.remove(os.path.join(media_path + os.sep + user + os.sep + 'documents', 'oh_encoder.json'))
 
             myFile = request.FILES.get('myFile')
+            print(myFile)
             if myFile:
                 if os.path.splitext(myFile.name)[-1] == ".csv":
                     fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep + 'input_files' + os.sep))
                     myFile.name = get_valid_filename(myFile.name)
+
                     fs.save(myFile.name, myFile)
                     messages.success(request, 'File Uploaded')
 
@@ -265,6 +267,25 @@ def eda(request):
 
         try:
             data_corr = df.corr()
+
+            # data_corr_columns = data_corr.columns
+            explanation_strings = []
+            # explanation_done_columns = []
+            # for col1 in data_corr_columns:
+            #     for col2 in data_corr_columns:
+            #         if col1 != col2 and (col1, col2) not in explanation_done_columns:
+            #             corr_value = data_corr.loc[col1, col2]
+            #             if corr_value > 0.5:
+            #                 explanation = f" There is a strong positive relationship between '{col1}' and '{col2}' of {corr_value:.2f}. As one increases, the other tends to increase as well very highly"
+            #                 explanation_done_columns.append((col1, col2))
+            #                 explanation_done_columns.append((col2, col1))
+            #                 explanation_strings.append(explanation)
+            #             elif corr_value < -0.5:
+            #                 explanation = f" There is a moderate negative relationship between '{col1}' and '{col2}' of {corr_value:.2f}. As one increases, the other tends to decrease highly."
+            #                 explanation_done_columns.append((col1, col2))
+            #                 explanation_done_columns.append((col2, col1))
+            #                 explanation_strings.append(explanation)
+
             f, ax = plt.subplots(figsize=a4_dims)
             sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
             plt.title("Correlation Matrix", weight='bold', fontsize=15)
@@ -278,7 +299,8 @@ def eda(request):
         if request.method == 'POST':
             return redirect('/data_preprocessing/')
 
-        context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols, 'df_describe_html': df_describe_html, 'png_files_path': png_files_path, }
+        context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols,
+                   'df_describe_html': df_describe_html, 'png_files_path': png_files_path, 'corelation_explanation': explanation_strings}
         return render(request, "eda.html", context)
     else:
         return redirect('/signin/')
