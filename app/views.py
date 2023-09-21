@@ -20,13 +20,13 @@ import category_encoders as ce
 import matplotlib.pyplot as plt
 from django.conf import settings
 from django.contrib import messages
+from pandas.api.types import is_string_dtype
 from django.utils.text import get_valid_filename
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import authenticate, login, logout, decorators
-from pandas.api.types import is_numeric_dtype, is_float_dtype, is_string_dtype
-from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
+from django.shortcuts import render, HttpResponse, redirect
 
 # logger = logging.getLogger(__name__)
 
@@ -71,7 +71,6 @@ def sign_up(request):
 
         # ============== VALIDATIONS ============== #
 
-        # USERNAME
         if User.objects.filter(username=username).exists():
             messages.warning(request, 'Username already present, please choose different username')
             return redirect('/signup/')
@@ -152,7 +151,6 @@ def upload(request):
                     fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep + 'input_files' + os.sep))
                     myFile.name = get_valid_filename(myFile.name)
                     fs.save(myFile.name, myFile)
-                    # uploaded_file_url = fs.url(filename)
                     messages.success(request, 'File Uploaded')
 
                     return redirect('/eda/')
@@ -239,6 +237,7 @@ def eda(request):
         df_describe = divide_columns_into_df(df.describe())
         df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in df_describe]
         all_categorical = [col for col in df.columns if 1 < df[col].nunique() < 15]
+
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
         check_dir_exists(folder)
 
@@ -395,7 +394,6 @@ def model_selection(request):
     file = open(docs_path + os.sep + 'df_preprocessed.json')
     json_file = json.load(file)
     dependent_variable = json_file['dependent_variable']
-    dependent_variable_type = json_file['dependent_variable_type']
     test_size_ratio = json_file['test_size_ratio']
 
     # TODO : Display model based on dep var type
@@ -447,20 +445,10 @@ def model_selection(request):
                         model = get_kneighbors_classifier_model(X_train, y_train)
                     classifier = True
 
-                # used_model.append([user, model_name])
                 model_details['model_name'] = model_name
 
             model_details['model_type'] = model_name
             model_details['predictions'] = model.predict(X_test)
-            # predictions.append([user, model.predict(X_test)])
-            # filtered_predictions = [i for i in predictions if i[0] == user]
-
-            # print("----------------------------------------")
-            # model_details['model'] = model
-            # print(model)
-            # all_model.append([user, model])
-
-            # print("----------------------------------------")
             if classifier:
                 X_train = p_X_train
                 X_test = p_X_test
@@ -682,11 +670,7 @@ def model_testing(request, button_id):
     user = request.user
     user_id = user.id
     if user_id:
-        # get_doc_id = Document.objects.filter(user_id=user).values()
-        # print('get_doc_id', get_doc_id)
-        # model_data = TrainedModels.objects.filter(document_id=get_doc_id[int(button_id)]['id']).values()  # TODO  : NEED to fix this
         model_data = TrainedModels.objects.filter(user=user_id, id=button_id).values()  # TODO  : NEED to fix this
-        # print('model_data', model_data[0])
         df_test = None
         project_name = model_data[0]['project_name']
         model_name = model_data[0]['model_name']
@@ -703,14 +687,14 @@ def model_testing(request, button_id):
             for column, value in zip(col_names, predict):
                 if one_hot_decoder and column in one_hot_decoder.keys():
                     val = one_hot_decoder[column][value.lower()]
-                    try:
+                    if isinstance(val, int):
                         to_be_predicted.append(int(val))
-                    except:
+                    else:
                         to_be_predicted.append(float(val))
                 else:
-                    try:
+                    if isinstance(value, int):
                         to_be_predicted.append(int(value))
-                    except:
+                    else:
                         to_be_predicted.append(float(value))
 
             model_file = pickle.loads(model_file)
