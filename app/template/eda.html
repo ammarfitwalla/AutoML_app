@@ -26,7 +26,7 @@
                 {% endfor %}
             </li>
         </ul>
-    
+
     </div>
 
     <div class="card">
@@ -54,16 +54,16 @@
     <h4 class="eda_heading" style="margin:30px;">GRAPHICAL REPRESENTATION BELOW</h4>
     <div class="container">
         {% if png_files_path %}
-        {% for graph in png_files_path %}
-        {% if forloop.counter0|divisibleby:2 %}
-        <div class="imgContainer" style="display: flex; justify-content: space-evenly; margin-left:-10%;">
-            {% endif %}
-            <img class="imgContainerClass" src="../../media/{{ graph }}"
-                 style="width: 55%; height: auto; border:groove;">
-            {% if forloop.counter|divisibleby:2 or forloop.last %}
-        </div>
-        {% endif %}
-        {% endfor %}
+            {% for graph in png_files_path %}
+                {% if forloop.counter0|divisibleby:2 %}
+                    <div class="imgContainer" style="display: flex; justify-content: space-evenly; margin-left:-10%;">
+                {% endif %}
+                    <img class="imgContainerClass" src="../../media/{{ graph }}"
+                         style="width: 55%; height: auto; border:groove;">
+                {% if forloop.counter|divisibleby:2 or forloop.last %}
+                    </div>
+                {% endif %}
+            {% endfor %}
         {% endif %}
     </div>
     {% if corelation_explanation %}

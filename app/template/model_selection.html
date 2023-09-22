@@ -17,22 +17,21 @@
 {% endif %}
 
 <h3 class="eda_heading">MACHINE LEARNING</h3>
-<hr style="border-top: 3px dotted #bbb; margin-bottom:3%;">
 <form method="POST">
     {% csrf_token %}
-    <div>
-        <label for="model">Choose a model:</label>
+        <div class="card">
+        <label style="margin-top: 20px;" for="model">Choose a model:&nbsp;&nbsp;</label>
         <select id="model" name="model_name">
             {% for model in model_name_list %}
             <option value="{{model}}">{{model}}</option>
             {% endfor %}
         </select>
 
+        &nbsp;&nbsp;&nbsp;
         <!--        ---------------------------------------------------------------------------->
 <!--        <div id="showdivid" style="display:none;">-->
         <div style="display:none;">
             {% if lr %}
-
             <label>{{lr}} </label>
             {% endif %}
 
@@ -52,12 +51,29 @@
         {{actual_pred_df | safe}}
         {% endif %}
     </div>
-
-    <div style="padding-top:10%;" class="flex-center flex-column">
-        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
-    </div>
 </form>
+<p class="footer-heart">
+  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
+<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
+</p>
 
+<style>
+.card {
+box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+display: flex;
+flex-direction: row;
+transition: 0.2s;
+border-radius: 10px;
+padding: 1.1%;
+display: flex;
+margin-bottom: 15px;
+border-color: #445e78!important;
+border-top: medium;
+}
+.card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+</style>
 
 {% endblock %}
 
@@ -85,3 +101,5 @@ $(document).ready(function(){
 </script>
 
 {% endblock script %}
+
+

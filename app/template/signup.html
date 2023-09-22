@@ -107,20 +107,18 @@ Sign Up
 
         <div class="col-md-2"></div>
     </div>
-    <div style="padding-top:10%;" class="flex-center flex-column">
-        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
-    </div>
 </div>
+
+<p class="footer-heart">
+  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
+<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
+</p>
 
 {% block script %}
 <script type="text/javascript">
 	function get_ip(json) {
 		$("#id_location").val(json.ip);
 	}
-
-
-
-
 </script>
 
 <script src="https://api.ipify.org?format=jsonp&callback=get_ip"></script>

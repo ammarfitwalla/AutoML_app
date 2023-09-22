@@ -18,32 +18,34 @@
 
 <br>
 
-<div>
+<div style="width: 100%; margin-bottom:5%; padding:1% 1% 5% 1%" class="card">
 
     <h3 class="eda_heading">PROFILE</h3>
-    <hr class="solid" style="border-top: 3px dotted #bbb">
     <form method="POST">
         {% csrf_token %}
-
         {% if document_project_name %}
-
-        {% for doc_name, project_name, model_id in document_project_name %}
-        <!--            <h4>Document name : {{doc_name}}</h4>-->
-        <h4>Project : {{project_name}}</h4>
-
-        <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}">Test Model
-        </button>
+            {% for doc_name, project_name, model_id in document_project_name %}
+                {% if forloop.counter0|divisibleby:2 %}
+                    <div style="display: flex; justify-content: space-evenly;" class="custom-div">
+                {% endif %}
+                <div class="card">
+                    <h4>Project: {{project_name}}</h4>
+                    <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}">Test Model</button>
+                </div>
+                {% if forloop.counter|divisibleby:2 or forloop.last %}
+                    </div>
+                {% endif %}
         {% endfor %}
-
         {% else %}
-        <h3>There are no saved data</h3>
+            <h3>There are no saved data</h3>
         {% endif %}
-
-        <div style="padding-top:10%;" class="flex-center flex-column">
-            <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>
-        </div>
     </form>
 </div>
+
+<p class="footer-heart">
+  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
+<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
+</p>
 
 <style>
 
@@ -54,6 +56,22 @@ font-weight: bold;
 margin-top: 0px;
 margin-bottom: 1px;
 text-align: center;
+}
+
+.card{
+box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+transition: 0.2s;
+border-radius: 10px;
+margin-top:1%;
+padding: 1.1% 1% 0.7% 1%;
+border-color: #445e78!important;
+border-top: medium;
+margin-right: 5px;
+margin-left: 5px;
+width:48%;
+}
+.card:hover {
+box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
 }
 
 </style>
