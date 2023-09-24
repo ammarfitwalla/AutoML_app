@@ -20,7 +20,7 @@
 <form method="POST">
     {% csrf_token %}
         <div class="card">
-        <label style="margin-top: 20px;" for="model">Choose a model:&nbsp;&nbsp;</label>
+<!--        <label style="margin-top: 20px;" for="model">Choose a model:&nbsp;&nbsp;</label>-->
         <select id="model" name="model_name">
             {% for model in model_name_list %}
             <option value="{{model}}">{{model}}</option>

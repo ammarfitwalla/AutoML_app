@@ -16,8 +16,8 @@
         {% if col %}
         {% for c,v in col %}
         <div class="form-group">
-            <div><h5><b>{{c}}</b></h5><input style="width: 50%; display: inline-flex;border-color: #445e78!important;"
-                                             type="text" class="form-control" id="username" name="inputs" value="{{v}}" required></div>
+            <div><h5>{{c}}</h5><input style="width: 50%; display: inline-flex;border-color: #445e78!important;text-align: center;"
+                                    autocomplete="off" type="text" class="form-control" id="username" name="inputs" value="{{v}}" required></div>
         </div>
         {% endfor %}
         {% endif %}
