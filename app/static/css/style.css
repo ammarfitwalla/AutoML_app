@@ -1,21 +1,22 @@
 .eda_heading{
-color: black;
-font-family: monospace;
+color: #445e78!important;
+font-family: system-ui;
 font-weight: bold;
 text-align: center;
 }
 
 label{
-font-size:20px;
+font-size:30px;
 }
 
-
 .custom-table {
-    font-family: Arial, sans-serif;
+    font-family: system-ui;
     border-collapse: collapse;
     width: 100%;
     background-color: #fff8ee;
     text-align-last: center;
+    font-weight:400;
+    color: black;
 }
 
 .custom-table th, .custom-table td {

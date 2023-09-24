@@ -1,4 +1,4 @@
-rank,discipline,yrs.since.phd,yrs.service,sex,salary
+rank,discipline,yrs.since.phd,yrs.service,gender,salary
 Prof,B,19,18,Male,139750.00
 Prof,B,20,16,Male,173200.00
 AsstProf,B,4,3,Male,79750.00

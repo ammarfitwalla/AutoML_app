@@ -52,11 +52,10 @@
     </div>
 
     <h4 class="eda_heading" style="margin:30px;">GRAPHICAL REPRESENTATION BELOW</h4>
-    <div class="container">
         {% if png_files_path %}
             {% for graph in png_files_path %}
                 {% if forloop.counter0|divisibleby:2 %}
-                    <div class="imgContainer" style="display: flex; justify-content: space-evenly; margin-left:-10%;">
+                    <div class="imgContainer" style="display: flex; justify-content: space-evenly;">
                 {% endif %}
                     <img class="imgContainerClass" src="../../media/{{ graph }}"
                          style="width: 55%; height: auto; border:groove;">
@@ -65,7 +64,7 @@
                 {% endif %}
             {% endfor %}
         {% endif %}
-    </div>
+
     {% if corelation_explanation %}
     <ul>
         {% for explanation in corelation_explanation %}

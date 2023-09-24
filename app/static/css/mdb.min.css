@@ -1,6 +1,6 @@
 /*! * Material Design for Bootstrap 4 * Version: MDB FREE 4.5.10 * * * Copyright: Material Design for Bootstrap * https://mdbootstrap.com/ * * Read the license: https://mdbootstrap.com/license/ * * * Documentation: https://mdbootstrap.com/ * * Getting started: https://mdbootstrap.com/getting-started/ * * Tutorials: https://mdbootstrap.com/bootstrap-tutorial/ * * Templates: https://mdbootstrap.com/templates/ * * Support: https://mdbootstrap.com/support/ * * Contact: office@mdbootstrap.com * * Atribution: Animate CSS, Twitter Bootstrap, Materialize CSS, Normalize CSS, Waves JS, WOW JS, Toastr, Chart.js , Hammer.js * */
-body,h1,h2,h3,h4,h5,h6{
-    font-weight:300
+body,h1,h2,h3,h4,h5,h6,label,p,table{
+    font-weight:400;
 }
 .view,.view .mask,.waves-effect{
     overflow:hidden
@@ -1394,7 +1394,7 @@ a.bg-light:focus,a.bg-light:hover,button.bg-light:focus,button.bg-light:hover{
     font-weight:700
 }
 body{
-    font-family:Roboto,sans-serif
+    font-family:system-ui
 }
 .h1-responsive{
     font-size:150%

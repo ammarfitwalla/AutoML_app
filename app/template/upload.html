@@ -25,14 +25,14 @@
     <form method="post" enctype="multipart/form-data" action="/upload/">
         {% csrf_token %}
 
-        <h2 class="eda_heading" >DATASET UPLOAD (.csv/.xlsx)</h2>
+        <h2 class="eda_heading" >DATASET UPLOAD</h2>
     <!--    <h3>Upload your file (.csv/.xlsx)</h3>-->
 
         <br>
         <div class="card">
 
-        <div class="form-group">
-            <input type="file" name="myFile" class="form-control" accept=".csv">
+        <div class="form-group" style="display:flex;align-items: flex-end;">
+            <input type="file" name="myFile" class="form-control" accept=".csv"> <h5>&nbsp;&nbsp;(.csv/.xlsx)</h5>
         </div>
         <button type="submit" name="custom_file" class="btn btn-primary">Upload</button>
         </div>

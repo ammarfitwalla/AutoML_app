@@ -7,7 +7,7 @@
         {% csrf_token %}
         <div class="form-group">
             <input type="text" class="form-control" id="project_name"
-                   name="project_name" placeholder="Enter project name" required>
+                   name="project_name" placeholder="Enter project name" autocomplete="off" required>
         </div>
         <button type="submit" name="save_model" class="btn btn-primary btn-sm">Save Project</button>
     </form>
