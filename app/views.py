@@ -289,10 +289,10 @@ def eda(request):
             f, ax = plt.subplots(figsize=a4_dims)
             sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
             plt.title("Correlation Matrix", weight='bold', fontsize=15)
-            correlation_name = os.path.join(folder, 'correlation.png')
+            correlation_name = folder + os.sep + 'correlation.png'
             plt.savefig(correlation_name, bbox_inches='tight', dpi=300)
-
-            png_files_path.append(os.path.abspath(correlation_name))
+            png_files_path.append(correlation_name)\
+            
         except Exception as err:
             print(f"[ERROR PLOTTING]: Unable to plot the heatmap due to: {str(err)}")
 
