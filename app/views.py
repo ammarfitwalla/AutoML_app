@@ -291,7 +291,7 @@ def eda(request):
             plt.title("Correlation Matrix", weight='bold', fontsize=15)
             correlation_name = folder + os.sep + 'correlation.png'
             plt.savefig(correlation_name, bbox_inches='tight', dpi=300)
-            png_files_path.append(correlation_name)\
+            png_files_path.append(correlation_name)
             
         except Exception as err:
             print(f"[ERROR PLOTTING]: Unable to plot the heatmap due to: {str(err)}")
