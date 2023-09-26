@@ -259,11 +259,11 @@ def eda(request):
             for p in ax.patches:
                 ax.annotate('{:.1f}'.format(p.get_height()), (p.get_x(), p.get_height() + 5))
 
-            png_file_name = os.path.join(folder, f"{i}.png")
+            png_file_name = folder + os.sep + f"{i}.png"
             plt.savefig(png_file_name, bbox_inches='tight', pad_inches=0.1, dpi=300)
             plt.close()
 
-            png_files_path.append(os.path.abspath(png_file_name))
+            png_files_path.append(png_file_name)
 
         try:
             data_corr = df.corr()
