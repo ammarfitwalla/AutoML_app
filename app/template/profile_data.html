@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block content %}
 
 <!-- MESSAGE -->
@@ -21,7 +21,7 @@
 <div style="width: 100%; margin-bottom:5%; padding:1% 1% 5% 1%;box-shadow: 0 0px 0px 0 rgba(0,0,0,0.2);" class="card">
 
     <h3 class="eda_heading" style="margin-bottom:10px;">PROJECTS</h3>
-    <form method="POST">
+    <form method="POST" id="form-id">
         {% csrf_token %}
         {% if document_project_name %}
             {% for doc_name, project_name, model_id in document_project_name %}
@@ -43,6 +43,9 @@
             <h4 style="margin-top: 1%;">There are currently no projects to display.</h4>
         {% endif %}
     </form>
+    <div id="overlay" style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
+        <img id="loader" src="{% static 'img/loader_3.gif' %}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: auto; max-width: 100%; max-height: 100%;">
+    </div>
 </div>
 
 <p class="footer-heart">
@@ -70,5 +73,12 @@ box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
 }
 
 </style>
-
+<script>
+document.getElementById('form-id').addEventListener('submit', function() {
+document.getElementById('overlay').style.display = 'block';
+});
+window.onload = function() {
+document.getElementById('overlay').style.display = 'none';
+};
+</script>
 {% endblock %}

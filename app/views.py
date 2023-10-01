@@ -381,6 +381,7 @@ def model_selection(request):
     df_model.drop(columns=df_model.columns[0], axis=1, inplace=True)
     file = open(docs_path + os.sep + 'df_preprocessed.json')
     json_file = json.load(file)
+    file.close()
     dependent_variable = json_file['dependent_variable']
     test_size_ratio = json_file['test_size_ratio']
 
@@ -499,6 +500,7 @@ def model_evaluation(request):
         return redirect('/upload/')
     file = open(docs_path + os.sep + 'model_details.json')
     json_file = json.load(file)
+    file.close()
     model_name = json_file['model_name']
     y_test = pd.read_csv(docs_path + os.sep + 'y_test.csv')
     y_test.drop(columns=y_test.columns[0], axis=1, inplace=True)
@@ -577,6 +579,7 @@ def save_model(request):
             return redirect('/upload/')
         file = open(docs_path + os.sep + 'model_details.json')
         json_file = json.load(file)
+        file.close()
         # model_attributes = model_value()
         with open(docs_path + os.sep + 'model', 'rb') as f:
             model = pickle.load(f)

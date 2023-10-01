@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block content %}
 
 
@@ -17,7 +17,7 @@
 {% endif %}
 
 <h3 class="eda_heading">MACHINE LEARNING</h3>
-<form method="POST">
+<form method="POST" id="form-id">
     {% csrf_token %}
         <div class="card">
 <!--        <label style="margin-top: 20px;" for="model">Choose a model:&nbsp;&nbsp;</label>-->
@@ -52,10 +52,23 @@
         {% endif %}
     </div>
 </form>
+<div id="overlay" style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
+    <img id="loader" src="{% static 'img/loader_3.gif' %}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: auto; max-width: 100%; max-height: 100%;">
+</div>
+
 <p class="footer-heart">
   Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
 <img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
 </p>
+
+<script>
+document.getElementById('form-id').addEventListener('submit', function() {
+document.getElementById('overlay').style.display = 'block';
+});
+window.onload = function() {
+document.getElementById('overlay').style.display = 'none';
+};
+</script>
 
 <style>
 .card {
@@ -97,7 +110,6 @@ $(document).ready(function(){
         });
     });
 });
-
 </script>
 
 {% endblock script %}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 
@@ -21,7 +22,7 @@
 
 <!--<div style="width: 100%; margin-bottom:5%; padding:1% 1% 5% 1%" class="card">-->
 
-    <form method="post" enctype="multipart/form-data" action="/upload/">
+    <form method="post" id="form-id" enctype="multipart/form-data" action="/upload/">
         {% csrf_token %}
 
         <h2 class="eda_heading" >DATASET UPLOAD</h2>
@@ -30,7 +31,7 @@
         <div class="card">
 
         <div class="form-group" style="display:flex;align-items: flex-end;">
-            <input type="file" name="myFile" class="form-control" accept=".csv"> <h5>&nbsp;&nbsp;(.csv/.xlsx)</h5>
+            <input type="file" name="myFile" class="form-control" accept=".csv"> <h5>&nbsp;&nbsp;(.csv)</h5>
         </div>
         <button type="submit" name="custom_file" class="btn btn-primary">Upload</button>
         </div>
@@ -49,7 +50,7 @@
                 <h5>Predict whether a passenger in Titanic will survive or not.</h5>
                 <div class="buttons" style="margin: 0 auto; display: inline;">
                     <button type="submit" name="titanic.csv" class="btn btn-primary">Upload</button>
-                    <button type="submit" name="titanic.csv_download" class="btn btn-primary">Download</button>
+                    <button type="submit" id="downloadTitanic" name="titanic.csv_download" class="btn btn-primary">Download</button>
                 </div>
             </div>
 
@@ -58,7 +59,7 @@
                 <h5>Predict whether a customer will purchase a car or not.</h5>
                 <div class="buttons" style="margin: 0 auto; display: inline;">
                     <button type="submit" name="car_purchase.csv" class="btn btn-primary">Upload</button>
-                    <button type="submit" name="car_purchase.csv_download" class="btn btn-primary">Download</button>
+                    <button type="submit" id="downloadCarPurchase" name="car_purchase.csv_download" class="btn btn-primary">Download</button>
                 </div>
             </div>
         </div>
@@ -69,7 +70,7 @@
             <h5>Predict California house prices.</h5>
             <div class="buttons" style="margin: 0 auto; display: inline;">
                 <button type="submit" name="california_housing.csv" class="btn btn-primary">Upload</button>
-                <button type="submit" name="california_housing.csv_download" class="btn btn-primary">Download</button>
+                <button type="submit" id="downloadHousePrice" name="california_housing.csv_download" class="btn btn-primary">Download</button>
             </div>
         </div>
 
@@ -79,12 +80,15 @@
             <h5>Predict Employee Salary based on experience and qualification.</h5>
             <div class="buttons" style="margin: 0 auto; display: inline;">
                 <button type="submit" name="salary.csv" class="btn btn-primary">Upload</button>
-                <button type="submit" name="salary.csv_download" class="btn btn-primary">Download</button>
+                <button type="submit" id="downloadEmployeeSalary" name="salary.csv_download" class="btn btn-primary">Download</button>
             </div>
         </div>
-
         </div>
     </form>
+
+<div id="overlay" style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
+    <img id="loader" src="{% static 'img/loader_3.gif' %}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: auto; max-width: 100%; max-height: 100%;">
+</div>
 
 <p class="footer-heart">
   Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
@@ -135,4 +139,17 @@
 }
 
 </style>
+
+<script>
+    document.getElementById('form-id').addEventListener('submit', function(event) {
+        const excludedButtonIds = ["downloadTitanic", "downloadCarPurchase", "downloadEmployeeSalary", "downloadHousePrice"]; // Add more button IDs as needed
+        if (!excludedButtonIds.includes(event.submitter.id)) {
+            document.getElementById('overlay').style.display = 'block';
+        }
+    });
+
+    window.onload = function() {
+        document.getElementById('overlay').style.display = 'none';
+    };
+</script>
 {% endblock %}
