@@ -5,6 +5,7 @@ import pickle
 import shutil
 import uuid
 import mimetypes
+import requests
 from .utils import *
 import pandas as pd
 import numpy as np
@@ -15,6 +16,7 @@ import category_encoders as ce
 import matplotlib.pyplot as plt
 from django.conf import settings
 from django.contrib import messages
+from django.http import JsonResponse
 from pandas.api.types import is_string_dtype
 from django.utils.text import get_valid_filename
 from sklearn.preprocessing import StandardScaler
@@ -34,8 +36,29 @@ plt.switch_backend('agg')
 
 
 def home(request):
+    user_ip = get_client_ip(request)
+    # user_ip = '1.23.255.255'
+
+    # Make a request to the ipinfo.io API to get location data
+    response = requests.get(f"https://ipinfo.io/{user_ip}/json")
+    data = response.json()
+
+    # Extract location information
+    city = data.get('city', 'Unknown')
+    region = data.get('region', 'Unknown')
+    country = data.get('country', 'Unknown')
+    loc = data.get('loc', 'Unknown')
+    print({'city': city, 'region': region, 'country': country, 'loc': loc})
     return render(request, 'home.html')
 
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 def continue_as_guest(request):
     request.session['guest_session_id'] = str(uuid.uuid4())
@@ -611,6 +634,16 @@ def save_model(request):
 def profile_data(request):
     user = str(request.user.id)
     if user:
+        if request.method == 'POST':
+            button_id = request.POST.get('test_model_button')
+            if '_delete' in button_id:
+                model_instance = get_object_or_404(TrainedModels, id=str(button_id).split("_")[0])
+                document = model_instance.document
+                document.delete()
+                model_instance.delete()
+                messages.success(request, 'Project Deleted Successfully!')
+                return redirect('/profile_data/')
+            return redirect(f'/model_testing/{int(button_id)}')
         document = Document.objects.filter(user_id=user)
         if document:
             model_data = TrainedModels.objects.filter(document_id__in=document.values_list('id', flat=True)).values_list('project_name', flat=True)
@@ -618,15 +651,6 @@ def profile_data(request):
             projects_name_list = [str(md) for md in model_data]
             model_id = list(model_data.values_list('id', flat=True))
             print(docs_name_list, projects_name_list, model_id)
-            if request.method == 'POST':
-                button_id = request.POST.get('test_model_button')
-                if '_delete' in button_id:
-                    model_instance = get_object_or_404(TrainedModels, id=str(button_id).split("_")[0])
-                    # Delete the model instance
-                    model_instance.delete()
-                    messages.success(request, 'Project Deleted Successfully!')
-                    return redirect('/profile_data/')
-                return redirect(f'/model_testing/{int(button_id)}')
             if not docs_name_list or not projects_name_list or not model_id:
                 context = {'document_project_name': None, }
             else:
