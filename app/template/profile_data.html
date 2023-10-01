@@ -30,14 +30,17 @@
                 {% endif %}
                 <div class="card">
                     <h4>{{project_name}}</h4>
-                    <button type="submit" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}">Test Model</button>
+                    <div style="display: flex;">
+                        <button type="submit" style="width: -webkit-fill-available;" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}">Test Model</button>
+                        <button type="submit" style="width: -webkit-fill-available; background-color: #d11a2a!important;" class="btn btn-primary btn-sm" name="test_model_button" value="{{model_id}}_delete"><span class="bi bi-trash"></span>Delete</button>
+                    </div>
                 </div>
                 {% if forloop.counter|divisibleby:2 or forloop.last %}
                     </div>
                 {% endif %}
         {% endfor %}
         {% else %}
-            <h3>There are no saved data</h3>
+            <h4 style="margin-top: 1%;">There are currently no projects to display.</h4>
         {% endif %}
     </form>
 </div>

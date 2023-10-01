@@ -1,13 +1,9 @@
-import os
 import ast
-import csv
 import glob
 import json
 import pickle
 import shutil
 import uuid
-import chardet
-# import logging
 import mimetypes
 from .utils import *
 import pandas as pd
@@ -15,7 +11,6 @@ import numpy as np
 import seaborn as sns
 from app.models import *
 from sklearn import metrics
-from json import JSONEncoder
 import category_encoders as ce
 import matplotlib.pyplot as plt
 from django.conf import settings
@@ -26,7 +21,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import authenticate, login, logout, decorators
-from django.shortcuts import render, HttpResponse, redirect
+from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 # logger = logging.getLogger(__name__)
 
@@ -36,22 +31,6 @@ list_to_handle_nan_values = ['mean', 'median', 'bfill', 'ffill', 0, 'delete reco
 list_to_handle_nan_str_values = ['bfill', 'ffill', 0, 'delete records']
 
 plt.switch_backend('agg')
-
-
-class NumpyArrayEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return JSONEncoder.default(self, obj)
-
-
-def check_dir_exists(path):
-    """
-    :param path: /path/to/dir
-    :return: if dir not present, it creates a dir
-    """
-    if not os.path.isdir(path):
-        os.mkdir(path)
 
 
 def home(request):
@@ -178,42 +157,6 @@ def upload(request):
 
     return render(request, 'upload.html')
 
-
-def divide_columns_into_df(df):
-    num_columns = len(df.columns)
-    if num_columns < 8:
-        return [df]
-    num_df = 2
-
-    columns_per_df = num_columns // num_df
-    remainder = num_columns % num_df
-
-    dfs = []
-
-    start_col = 0
-    for i in range(num_df):
-        end_col = start_col + columns_per_df
-        if i < remainder:
-            end_col += 1
-
-        subset_df = df.iloc[:, start_col:end_col]
-        dfs.append(subset_df)
-        start_col = end_col
-
-    return dfs
-
-def file_to_df(file_name):
-    with open(file_name, 'rb') as rawdata:
-        result = chardet.detect(rawdata.read(10000))
-
-    with open(file_name, newline='') as csvfile:
-        dialect = csv.Sniffer().sniff(csvfile.read())
-        if dialect.delimiter == ',':
-            df = pd.read_csv(file_name, encoding=result['encoding'])  # Import the csv with a comma as the separator
-        elif dialect.delimiter == ';':
-            df = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
-
-        return df
 
 # @decorators.login_required
 def eda(request):
@@ -674,12 +617,20 @@ def profile_data(request):
             docs_name_list = [str(doc).split("/")[-1] for doc in document]
             projects_name_list = [str(md) for md in model_data]
             model_id = list(model_data.values_list('id', flat=True))
-
+            print(docs_name_list, projects_name_list, model_id)
             if request.method == 'POST':
                 button_id = request.POST.get('test_model_button')
+                if '_delete' in button_id:
+                    model_instance = get_object_or_404(TrainedModels, id=str(button_id).split("_")[0])
+                    # Delete the model instance
+                    model_instance.delete()
+                    messages.success(request, 'Project Deleted Successfully!')
+                    return redirect('/profile_data/')
                 return redirect(f'/model_testing/{int(button_id)}')
-
-            context = {'document_project_name': zip(docs_name_list, projects_name_list, model_id), }
+            if not docs_name_list or not projects_name_list or not model_id:
+                context = {'document_project_name': None, }
+            else:
+                context = {'document_project_name': zip(docs_name_list, projects_name_list, model_id), }
         else:
             context = {'document_project_name': None, }
         return render(request, 'profile_data.html', context)
@@ -697,7 +648,7 @@ def model_testing(request, button_id):
         project_name = model_data[0]['project_name']
         model_name = model_data[0]['model_name']
         col_names = ast.literal_eval(model_data[0]['column_names'])
-        predict = ["" for i in range(len(col_names))]
+        predict = ["" for _ in range(len(col_names))]
         if request.method == 'POST':
             sc_X = StandardScaler()
             model_file = model_data[0]['model_file']

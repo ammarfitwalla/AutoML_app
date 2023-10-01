@@ -1,8 +1,13 @@
+import os
+import csv
 import base64
+import chardet
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from io import BytesIO
 from flaml import AutoML
+from json import JSONEncoder
 import matplotlib.pyplot as plt
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
@@ -11,6 +16,57 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LinearRegression, LogisticRegression, SGDClassifier
 
 automl = AutoML()
+
+class NumpyArrayEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return JSONEncoder.default(self, obj)
+
+def check_dir_exists(path):
+    """
+    :param path: /path/to/dir
+    :return: if dir not present, it creates a dir
+    """
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
+def divide_columns_into_df(df):
+    num_columns = len(df.columns)
+    if num_columns < 8:
+        return [df]
+    num_df = 2
+
+    columns_per_df = num_columns // num_df
+    remainder = num_columns % num_df
+
+    dfs = []
+
+    start_col = 0
+    for i in range(num_df):
+        end_col = start_col + columns_per_df
+        if i < remainder:
+            end_col += 1
+
+        subset_df = df.iloc[:, start_col:end_col]
+        dfs.append(subset_df)
+        start_col = end_col
+
+    return dfs
+
+
+def file_to_df(file_name):
+    with open(file_name, 'rb') as rawdata:
+        result = chardet.detect(rawdata.read(10000))
+
+    with open(file_name, newline='') as csvfile:
+        dialect = csv.Sniffer().sniff(csvfile.read())
+        if dialect.delimiter == ',':
+            df = pd.read_csv(file_name, encoding=result['encoding'])  # Import the csv with a comma as the separator
+        elif dialect.delimiter == ';':
+            df = pd.read_csv(file_name, sep=';', encoding=result['encoding'])  # Import the csv with a semicolon as the separator
+        return df
+
 
 def get_automl_model(task_type, X_train, y_train):
     print('task_type', task_type)
