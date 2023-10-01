@@ -3,6 +3,7 @@ import glob
 import json
 import pickle
 import shutil
+import time
 import uuid
 import mimetypes
 import requests
@@ -12,6 +13,7 @@ import numpy as np
 import seaborn as sns
 from app.models import *
 from sklearn import metrics
+from datetime import datetime
 import category_encoders as ce
 import matplotlib.pyplot as plt
 from django.conf import settings
@@ -35,20 +37,28 @@ list_to_handle_nan_str_values = ['bfill', 'ffill', 0, 'delete records']
 plt.switch_backend('agg')
 
 
-def home(request):
-    user_ip = get_client_ip(request)
-    # user_ip = '1.23.255.255'
-
-    # Make a request to the ipinfo.io API to get location data
+def get_user_info(user_ip):
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
     response = requests.get(f"https://ipinfo.io/{user_ip}/json")
     data = response.json()
 
-    # Extract location information
-    city = data.get('city', 'Unknown')
-    region = data.get('region', 'Unknown')
-    country = data.get('country', 'Unknown')
-    loc = data.get('loc', 'Unknown')
-    print({'city': city, 'region': region, 'country': country, 'loc': loc})
+    data_dict = {'City': data.get('city', 'Unknown'),
+                 'Region': data.get('region', 'Unknown'),
+                 'Country': data.get('country', 'Unknown'),
+                 'Location': data.get('loc', 'Unknown'),
+                 'Date': formatted_datetime}
+
+    return data_dict
+
+def write_user_info_to_excel(data_dict):
+
+    csv_file_path = media_path + os.sep + 'data_with_datetime.csv'
+    existing_data = pd.read_csv(csv_file_path)
+    updated_data = pd.concat([existing_data, pd.DataFrame([data_dict])], ignore_index=True)
+    updated_data.to_csv(csv_file_path, index=False)
+
+def home(request):
     return render(request, 'home.html')
 
 
@@ -97,6 +107,12 @@ def sign_up(request):
         user = authenticate(username=username, password=password)
         login(request, user)
         messages.success(request, 'Account created, Successfully Logged in')
+        try:
+            user_ip = get_client_ip(request)
+            data_dict = get_user_info(user_ip)
+            write_user_info_to_excel(data_dict)
+        except Exception as e:
+            pass
         return redirect('/upload/')
 
     return render(request, 'signup.html')
