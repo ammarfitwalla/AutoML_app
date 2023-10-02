@@ -1,19 +1,14 @@
 import ast
 import glob
 import json
-import pickle
-import shutil
 import uuid
+import shutil
+import pickle
 import mimetypes
 from .utils import *
-import pandas as pd
-import numpy as np
-import seaborn as sns
 from app.models import *
 from sklearn import metrics
 import category_encoders as ce
-import matplotlib.pyplot as plt
-from django.conf import settings
 from django.contrib import messages
 from pandas.api.types import is_string_dtype
 from django.utils.text import get_valid_filename
@@ -49,7 +44,6 @@ def sign_up(request):
         password = request.POST.get('password')
 
         # ============== VALIDATIONS ============== #
-
         if User.objects.filter(username=username).exists():
             messages.warning(request, 'Username already present, please choose different username')
             return redirect('/signup/')
@@ -115,7 +109,6 @@ def download_file(request, filename):
     return response
 
 
-# @decorators.login_required
 def upload(request):
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
@@ -223,12 +216,14 @@ def eda(request):
             #         if col1 != col2 and (col1, col2) not in explanation_done_columns:
             #             corr_value = data_corr.loc[col1, col2]
             #             if corr_value > 0.5:
-            #                 explanation = f" There is a strong positive relationship between '{col1}' and '{col2}' of {corr_value:.2f}. As one increases, the other tends to increase as well very highly"
+            #                 explanation = (f" There is a strong positive relationship between '{col1}' and '{col2}' "
+            #                                f"of {corr_value:.2f}. As one increases, the other tends to increase as well very highly")
             #                 explanation_done_columns.append((col1, col2))
             #                 explanation_done_columns.append((col2, col1))
             #                 explanation_strings.append(explanation)
             #             elif corr_value < -0.5:
-            #                 explanation = f" There is a moderate negative relationship between '{col1}' and '{col2}' of {corr_value:.2f}. As one increases, the other tends to decrease highly."
+            #                 explanation = (f" There is a moderate negative relationship between '{col1}' and '{col2}' "
+            #                                f"of {corr_value:.2f}. As one increases, the other tends to decrease highly.")
             #                 explanation_done_columns.append((col1, col2))
             #                 explanation_done_columns.append((col2, col1))
             #                 explanation_strings.append(explanation)
@@ -325,7 +320,8 @@ def data_preprocessing(request):
         if dependent_variable not in selected_check_list and df_col_numbers - len(selected_check_list) > 1:
             df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
             df_preprocessing.to_csv(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
-            d = {'dependent_variable': dependent_variable, 'dependent_variable_type': str(df_preprocessing.dtypes[dependent_variable]), 'test_size_ratio': test_size_ratio}
+            d = {'dependent_variable': dependent_variable, 'test_size_ratio': test_size_ratio,
+                 'dependent_variable_type': str(df_preprocessing.dtypes[dependent_variable])}
 
             with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + "df_preprocessed.json", "w") as outfile:
                 json.dump(d, outfile)
@@ -345,7 +341,9 @@ def data_preprocessing(request):
 
 # @decorators.login_required
 def model_selection(request):
-    all_ml_models = ['(AutoML) Regression', 'Linear Regression', '(AutoML) Classification', 'Logistic Regression', 'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier', 'SGD Classifier']
+    all_ml_models = ['(AutoML) Regression', 'Linear Regression', '(AutoML) Classification', 'Logistic Regression',
+                     'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier',
+                     'SGD Classifier']
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
@@ -454,23 +452,12 @@ def model_selection(request):
             X_test.to_csv(docs_path + os.sep + 'X_test.csv')
             y_test.to_csv(docs_path + os.sep + 'y_test.csv')
 
-            # print("used_model", used_model)
-            # global model_value
-            # used_model_name = [i for i in used_model if i[0] == user]
-            # filtered_predictions = [i for i in predictions if i[0] == user]
-            # filtered_selected_model = [i for i in selected_model_type if i[0] == user]
-            # filtered_model = [i for i in all_model if i[0] == user]
-            #
-            # def model_value():
-            #     return [used_model_name[-1][-1], filtered_model[-1][-1], X_train, X_test, y_train, y_test, filtered_predictions[-1][-1], df_model, X, y, filtered_selected_model[-1][-1]]
-
             return redirect('/model_evaluation/')
 
     context = {'model_name_list': all_ml_models}
     return render(request, 'model_selection.html', context)  # except:  #     return redirect('/eda/')
 
 
-# @decorators.login_required
 def model_evaluation(request):
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
@@ -499,9 +486,9 @@ def model_evaluation(request):
         # my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse],
         #            ['Root Mean Squared Error', rmse], ['Model Score', model_score]]
 
-        my_data = [['Model', model_name], ['Mean Absolute Error', mae], ['Mean Squared Error', mse], ['Root Mean Squared Error', rmse]]
+        my_data = [['Model', model_name], ['Mean Absolute Error', mae],
+                   ['Mean Squared Error', mse], ['Root Mean Squared Error', rmse]]
 
-        # plt.scatter(y_test, y_pred, c='crimson')  # plt.yscale('log')  # plt.xscale('log')  #  # p1 = max(max(y_pred), max(y_test))  # p2 = min(min(y_pred), min(y_test))  # plt.plot([p1, p2], [p1, p2], 'b-')  # plt.xlabel('True Values')  # plt.ylabel('Predictions')  # plt.axis('equal')  # plt.savefig(png_file_name_)  # plt.close()
 
     else:
         # print(model_name)
@@ -532,7 +519,8 @@ def model_evaluation(request):
             return redirect('/model_selection/')
             # return render(request, 'model_evaluation.html')
 
-        my_data = [['Model', model_name], ['Accuracy Score', accuracy], ['Recall Score', recall], ['F1 score', f1], ['Precision', precision]]
+        my_data = [['Model', model_name], ['Accuracy Score', accuracy],
+                   ['Recall Score', recall], ['F1 score', f1], ['Precision', precision]]
 
         png_file_name_ = None
 
@@ -543,7 +531,6 @@ def model_evaluation(request):
     return render(request, 'model_evaluation.html', context)
 
 
-# @decorators.login_required
 def save_model(request):
     if 'guest_session_id' in request.session and not request.user.is_authenticated:
         messages.warning(request, 'Create an account to save the model.')
@@ -561,7 +548,6 @@ def save_model(request):
         file = open(docs_path + os.sep + 'model_details.json')
         json_file = json.load(file)
         file.close()
-        # model_attributes = model_value()
         with open(docs_path + os.sep + 'model', 'rb') as f:
             model = pickle.load(f)
         model_name = json_file['model_name']
@@ -598,7 +584,9 @@ def save_model(request):
             doc_instance = Document.objects.get(id=last_doc_id)
 
             X_json = X.to_json(orient='records')
-            data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name, model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type, oh_encoders=oh_encoder, independent_variable=X_json)
+            data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name,
+                model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type,
+                oh_encoders=oh_encoder, independent_variable=X_json)
             data.save()
 
             # ============ Clearing memory - Comment to keep the files ============
@@ -634,7 +622,6 @@ def profile_data(request):
             docs_name_list = [str(doc).split("/")[-1] for doc in document]
             projects_name_list = [str(md) for md in model_data]
             model_id = list(model_data.values_list('id', flat=True))
-            print(docs_name_list, projects_name_list, model_id)
             if not docs_name_list or not projects_name_list or not model_id:
                 context = {'document_project_name': None, }
             else:
@@ -681,14 +668,9 @@ def model_testing(request, button_id):
             model_file = pickle.loads(model_file)
             to_be_predicted = [to_be_predicted]
             if saved_model_type not in ['Regression', 'Linear Regression']:
-                X = pd.DataFrame(X)
-                sc_X.fit(X)
-                to_be_predicted = pd.DataFrame(to_be_predicted, columns=col_names)
-                to_be_predicted = sc_X.transform(to_be_predicted)
-
-            custom_predictions = model_file.predict(to_be_predicted)
-            custom_predictions = str(custom_predictions[0])
-            test_data = [['Prediction', custom_predictions]]
+                sc_X.fit(pd.DataFrame(X))
+                to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
+            test_data = [['Prediction', str(model_file.predict(to_be_predicted)[0])]]
             df_test = pd.DataFrame(test_data)
             df_test = df_test.to_html(classes="table table-striped table-hover", index=False, header=False)
         context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict), 'project_name': project_name}
