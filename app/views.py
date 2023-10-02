@@ -3,22 +3,18 @@ import glob
 import json
 import pickle
 import shutil
-import time
 import uuid
 import mimetypes
-import requests
 from .utils import *
 import pandas as pd
 import numpy as np
 import seaborn as sns
 from app.models import *
 from sklearn import metrics
-from datetime import datetime
 import category_encoders as ce
 import matplotlib.pyplot as plt
 from django.conf import settings
 from django.contrib import messages
-from django.http import JsonResponse
 from pandas.api.types import is_string_dtype
 from django.utils.text import get_valid_filename
 from sklearn.preprocessing import StandardScaler
@@ -37,38 +33,9 @@ list_to_handle_nan_str_values = ['bfill', 'ffill', 0, 'delete records']
 plt.switch_backend('agg')
 
 
-def get_user_info(user_ip):
-    current_datetime = datetime.now()
-    formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
-    response = requests.get(f"https://ipinfo.io/{user_ip}/json")
-    data = response.json()
-
-    data_dict = {'City': data.get('city', 'Unknown'),
-                 'Region': data.get('region', 'Unknown'),
-                 'Country': data.get('country', 'Unknown'),
-                 'Location': data.get('loc', 'Unknown'),
-                 'Date': formatted_datetime}
-
-    return data_dict
-
-def write_user_info_to_excel(data_dict):
-
-    csv_file_path = media_path + os.sep + 'data_with_datetime.csv'
-    existing_data = pd.read_csv(csv_file_path)
-    updated_data = pd.concat([existing_data, pd.DataFrame([data_dict])], ignore_index=True)
-    updated_data.to_csv(csv_file_path, index=False)
-
 def home(request):
     return render(request, 'home.html')
 
-
-def get_client_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
 
 def continue_as_guest(request):
     request.session['guest_session_id'] = str(uuid.uuid4())
@@ -160,19 +127,16 @@ def upload(request):
         check_dir_exists(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
 
         if 'custom_file' in request.POST:
-            if os.path.exists(os.path.join(media_path + os.sep + user + os.sep + 'documents', 'oh_encoder.json')):
-                os.remove(os.path.join(media_path + os.sep + user + os.sep + 'documents', 'oh_encoder.json'))
+            if os.path.exists(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'oh_encoder.json'):
+                os.remove(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'oh_encoder.json')
 
             myFile = request.FILES.get('myFile')
-            print(myFile)
             if myFile:
                 if os.path.splitext(myFile.name)[-1] == ".csv":
-                    fs = FileSystemStorage(location=os.path.join(media_path, user, 'documents' + os.sep + 'input_files' + os.sep))
+                    fs = FileSystemStorage(location=media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files' + os.sep)
                     myFile.name = get_valid_filename(myFile.name)
-
                     fs.save(myFile.name, myFile)
                     messages.success(request, 'File Uploaded')
-
                     return redirect('/eda/')
                 else:
                     messages.error(request, 'Please select valid file with extension .csv')
@@ -184,14 +148,15 @@ def upload(request):
         elif '_download' in list(request.POST.keys())[-1]:
             name = list(request.POST.keys())[-1]
             filename = name.split("_download")[0]
-            filepath = os.path.join(media_path, 'sample_csv', filename)
+            filepath = media_path + os.sep + 'sample_csv' + os.sep + filename
             path = open(filepath, 'r')
             mime_type, _ = mimetypes.guess_type(filepath)
             response = HttpResponse(path, content_type=mime_type)
             response['Content-Disposition'] = "attachment; filename=%s" % filename
             return response
         else:
-            shutil.copy(os.path.join(media_path, 'sample_csv', list(request.POST.keys())[-1]), os.path.join(media_path, user, 'documents', 'input_files'))
+            shutil.copy(media_path + os.sep + 'sample_csv' + os.sep + list(request.POST.keys())[-1],
+                media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
             return redirect('/eda/')
 
     return render(request, 'upload.html')
@@ -205,7 +170,7 @@ def eda(request):
     user = request.user.id if request.user.id else request.session['guest_session_id']
 
     if user is not None:
-        file_path = os.path.join(media_path, str(user), 'documents', 'input_files')
+        file_path = media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'input_files'
         list_of_files = glob.glob(file_path + os.sep + '*')
 
         if not list_of_files:
@@ -294,8 +259,8 @@ def data_preprocessing(request):
         return redirect('/signin/')
 
     user = request.user.id if request.user.id else request.session['guest_session_id']
-    docs_path = os.path.join(media_path, str(user), 'documents')
-    file_path = os.path.join(docs_path, 'input_files')
+    docs_path = media_path + os.sep + str(user) + os.sep + 'documents'
+    file_path = docs_path + os.sep + 'input_files'
     list_of_files = glob.glob(file_path + os.sep + '*')
 
     if not list_of_files:
@@ -612,13 +577,13 @@ def save_model(request):
             project_name = request.POST.get('project_name')
             pickle_file = pickle.dumps(model)
 
-            if os.path.exists(os.path.join(docs_path, 'oh_encoder.json')):
-                oh_encoder = json.load(open(os.path.join(docs_path, 'oh_encoder.json')))
+            if os.path.exists(docs_path + os.sep + 'oh_encoder.json'):
+                oh_encoder = json.load(open(docs_path + os.sep + 'oh_encoder.json'))
             else:
                 oh_encoder = None
 
             # ============ Saving document path with user id ============ #
-            file_path = os.path.join(media_path, str(user_id), 'documents', 'input_files')
+            file_path = media_path + os.sep + str(user_id) + os.sep + 'documents' + os.sep + 'input_files'
             list_of_files = glob.glob(file_path + os.sep + '*')
             file_name = max(list_of_files, key=os.path.getmtime)
             doc_id = Document(user_id=user.id, document=file_name)

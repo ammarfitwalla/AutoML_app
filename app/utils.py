@@ -1,6 +1,7 @@
 import os
 import csv
 import base64
+import requests
 import chardet
 import numpy as np
 import pandas as pd
@@ -8,13 +9,17 @@ import seaborn as sns
 from io import BytesIO
 from flaml import AutoML
 from json import JSONEncoder
+from datetime import datetime
 import matplotlib.pyplot as plt
+from django.conf import settings
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LinearRegression, LogisticRegression, SGDClassifier
 
+
+media_path = settings.MEDIA_ROOT
 automl = AutoML()
 
 class NumpyArrayEncoder(JSONEncoder):
@@ -187,3 +192,33 @@ def get_gaussian_nb_model(X_train, y_train):
     gaussian_nb_obj.fit(X_train, y_train)
 
     return gaussian_nb_obj
+
+
+def get_user_info(user_ip):
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    response = requests.get(f"https://ipinfo.io/{user_ip}/json")
+    data = response.json()
+
+    data_dict = {'City': data.get('city', 'Unknown'),
+                 'Region': data.get('region', 'Unknown'),
+                 'Country': data.get('country', 'Unknown'),
+                 'Location': data.get('loc', 'Unknown'),
+                 'Date': formatted_datetime}
+
+    return data_dict
+
+def write_user_info_to_excel(data_dict):
+
+    csv_file_path = media_path + os.sep + 'data_with_datetime.csv'
+    existing_data = pd.read_csv(csv_file_path)
+    updated_data = pd.concat([existing_data, pd.DataFrame([data_dict])], ignore_index=True)
+    updated_data.to_csv(csv_file_path, index=False)
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
