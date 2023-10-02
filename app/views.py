@@ -6,6 +6,7 @@ import shutil
 import pickle
 import mimetypes
 from .utils import *
+import seaborn as sns
 from app.models import *
 from sklearn import metrics
 import category_encoders as ce

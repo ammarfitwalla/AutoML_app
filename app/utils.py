@@ -5,7 +5,6 @@ import requests
 import chardet
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from io import BytesIO
 from flaml import AutoML
 from json import JSONEncoder
