@@ -8,7 +8,7 @@ import mimetypes
 from .utils import *
 import seaborn as sns
 from app.models import *
-from sklearn import metrics
+from sklearn import metrics, utils, preprocessing
 import category_encoders as ce
 from django.contrib import messages
 from pandas.api.types import is_string_dtype
@@ -287,6 +287,7 @@ def data_preprocessing(request):
 
     if request.method == 'POST':
         dependent_variable = request.POST['dep_var_name']
+
         slider_value = request.POST['slider_value']
         test_size_ratio = (100 - int(slider_value)) / 100
         categorical_col_names = [col for col in df_preprocessing.columns if df_preprocessing[col].dtype == 'O' and df_preprocessing[col].nunique() < 15]
@@ -371,6 +372,13 @@ def model_selection(request):
     X = df_model.drop([dependent_variable], axis=1)
     y = df_model[dependent_variable]
 
+    # if utils.multiclass.type_of_target(y) == 'continuous':
+    #     y = utils.multiclass.type_of_target(y.astype('int'))
+        # print(utils.multiclass.type_of_target(y))
+        # lab_enc = preprocessing.LabelEncoder()
+        # encoded = lab_enc.fit_transform(y)
+        # print(utils.multiclass.type_of_target(encoded))
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_ratio, random_state=77, shuffle=True)
     p_X_train = X_train.copy()
     p_X_test = X_test.copy()
@@ -384,18 +392,24 @@ def model_selection(request):
         if evaluation_button is None:
             model_details = {}
             if model_name in ['(AutoML) Regression', '(AutoML) Classification']:
-                model_name = model_name.split(" ")[-1]
-                if model_name == 'Classification':
+                # model_name = model_name
+                # model_name = model_name.split(" ")[-1]
+                if model_name.split(" ")[-1] == 'Classification':
                     X_train = sc_X.fit_transform(X_train)
                     X_test = sc_X.transform(X_test)
                     classifier = True
 
-                automl_model_name, model = get_automl_model(model_name.lower(), X_train, y_train)
+                automl_model_name, model = get_automl_model((model_name.split(" ")[-1]).lower(), X_train, y_train)
+                print("automl_model_name", automl_model_name)
                 model_details['model_name'] = automl_model_name
 
             else:
                 if model_name == 'Linear Regression':
                     model = get_linear_regression_model(X_train, y_train)
+                elif utils.multiclass.type_of_target(y) == 'continuous':
+                    messages.info(request, "Your Target Variable is 'Continuous' type, Please Use Regression Models.")
+                    context = {'model_name_list': all_ml_models}
+                    return render(request, 'model_selection.html', context)
                 else:
                     p_X_train = X_train.copy()
                     p_X_test = X_test.copy()
@@ -477,7 +491,7 @@ def model_evaluation(request):
     y_pred = np.asarray(json_file['predictions'])
     model_eva_type = json_file['model_type']
 
-    if model_eva_type in ['Regression', 'Linear Regression']:
+    if model_eva_type in ['(AutoML) Regression', 'Linear Regression']:
         folder_ = media_path + os.sep + user + os.sep + 'regression_graphs'
         check_dir_exists(folder_)
         png_file_name_ = folder_ + os.sep + "true_vs_predictions.png"
@@ -558,7 +572,6 @@ def save_model(request):
         X.drop(columns=X.columns[0], axis=1, inplace=True)
         y = pd.read_csv(docs_path + os.sep + 'y.csv')
         y.drop(columns=y.columns[0], axis=1, inplace=True)
-
         X_cols = X.columns.tolist()
         if request.method == 'POST':
             project_name = request.POST.get('project_name')
@@ -587,7 +600,7 @@ def save_model(request):
             X_json = X.to_json(orient='records')
             data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name,
                 model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type,
-                oh_encoders=oh_encoder, independent_variable=X_json)
+                oh_encoders=oh_encoder, independent_variable=X_json, dependent_variable=y.columns.tolist()[0])
             data.save()
 
             # ============ Clearing memory - Comment to keep the files ============
@@ -640,17 +653,18 @@ def model_testing(request, button_id):
     user_id = user.id
     if user_id:
         model_data = TrainedModels.objects.filter(user=user_id, id=button_id).values()  # TODO  : NEED to fix this
-        df_test = None
+        df_test, y = None, None
         project_name = model_data[0]['project_name']
         model_name = model_data[0]['model_name']
         col_names = ast.literal_eval(model_data[0]['column_names'])
-        predict = ["" for _ in range(len(col_names))]
+        predict = ["" for _ in col_names]
         if request.method == 'POST':
             sc_X = StandardScaler()
             model_file = model_data[0]['model_file']
             saved_model_type = model_data[0]['model_type']
             one_hot_decoder = model_data[0]['oh_encoders']
             X = ast.literal_eval(model_data[0]['independent_variable'])
+            y = model_data[0]['dependent_variable']
             predict = request.POST.getlist('inputs')
             to_be_predicted = []
             for column, value in zip(col_names, predict):
@@ -677,11 +691,10 @@ def model_testing(request, button_id):
 
             model_file = pickle.loads(model_file)
             to_be_predicted = [to_be_predicted]
-            print(to_be_predicted)
-            if saved_model_type not in ['Regression', 'Linear Regression']:
+            if saved_model_type not in ['Linear Regression']:
                 sc_X.fit(pd.DataFrame(X))
                 to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
-            test_data = [['Prediction', str(model_file.predict(to_be_predicted)[0])]]
+            test_data = [[f'{y} (Prediction)', str(model_file.predict(to_be_predicted)[0])]]
             df_test = pd.DataFrame(test_data)
             df_test = df_test.to_html(classes="table table-striped table-hover", index=False, header=False)
         context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict), 'project_name': project_name}

@@ -38,6 +38,7 @@ class TrainedModels(models.Model):
     model_file = PickledObjectField()
     oh_encoders = jsonfield.JSONField(null=True, blank=True)
     independent_variable = jsonfield.JSONField(null=True, blank=True)
+    dependent_variable = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return str(self.project_name)

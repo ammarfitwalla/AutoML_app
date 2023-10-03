@@ -73,7 +73,6 @@ def file_to_df(file_name):
 
 
 def get_automl_model(task_type, x_train, y_train):
-    print('task_type', task_type)
     automl.fit(x_train, y_train, task=str(task_type), time_budget=5, early_stop=True)
     best_model = automl.best_estimator
     return best_model, automl
