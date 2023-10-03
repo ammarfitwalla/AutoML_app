@@ -694,9 +694,9 @@ def model_testing(request, button_id):
             if saved_model_type not in ['Linear Regression']:
                 sc_X.fit(pd.DataFrame(X))
                 to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
-            test_data = [[f'{y} (Prediction)', str(model_file.predict(to_be_predicted)[0])]]
-            df_test = pd.DataFrame(test_data)
-            df_test = df_test.to_html(classes="table table-striped table-hover", index=False, header=False)
+            test_data = [[y, str(model_file.predict(to_be_predicted)[0])]]
+            df_test = pd.DataFrame(test_data, columns=['Target Variable', 'Prediction'])
+            df_test = df_test.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False)
         context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict), 'project_name': project_name}
         return render(request, 'model_testing.html', context)
     else:
