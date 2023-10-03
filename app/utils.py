@@ -72,9 +72,9 @@ def file_to_df(file_name):
         return df
 
 
-def get_automl_model(task_type, X_train, y_train):
+def get_automl_model(task_type, x_train, y_train):
     print('task_type', task_type)
-    automl.fit(X_train, y_train, task=str(task_type), time_budget=5, early_stop=True)
+    automl.fit(x_train, y_train, task=str(task_type), time_budget=5, early_stop=True)
     best_model = automl.best_estimator
     return best_model, automl
 
@@ -144,51 +144,51 @@ def remove_outlier(df, col, upper, lower):
 #     df[col] = remove_outlier(df, col, upper, lower)
 
 
-def get_linear_regression_model(X_train, y_train):
+def get_linear_regression_model(x_train, y_train):
     linear_regression_obj = LinearRegression()
-    linear_regression_obj.fit(X_train, y_train)
+    linear_regression_obj.fit(x_train, y_train)
 
     return linear_regression_obj
 
 
-def get_logistic_regression_model(X_train, y_train):
+def get_logistic_regression_model(x_train, y_train):
     logistic_regression_obj = LogisticRegression()
-    logistic_regression_obj.fit(X_train, y_train)
+    logistic_regression_obj.fit(x_train, y_train)
 
     return logistic_regression_obj
 
 
-def get_decision_tree_classifier_model(X_train, y_train):
+def get_decision_tree_classifier_model(x_train, y_train):
     decision_tree_classifier_obj = DecisionTreeClassifier()
-    decision_tree_classifier_obj.fit(X_train, y_train)
+    decision_tree_classifier_obj.fit(x_train, y_train)
 
     return decision_tree_classifier_obj
 
 
-def get_sgd_classifier_model(X_train, y_train):
+def get_sgd_classifier_model(x_train, y_train):
     sgd_obj = SGDClassifier()
-    sgd_obj.fit(X_train, y_train)
+    sgd_obj.fit(x_train, y_train)
 
     return sgd_obj
 
 
-def get_kneighbors_classifier_model(X_train, y_train):
+def get_kneighbors_classifier_model(x_train, y_train):
     kneighbors_classifier_obj = KNeighborsClassifier()
-    kneighbors_classifier_obj.fit(X_train, y_train)
+    kneighbors_classifier_obj.fit(x_train, y_train)
 
     return kneighbors_classifier_obj
 
 
-def get_random_forest_classifier_model(X_train, y_train):
+def get_random_forest_classifier_model(x_train, y_train):
     random_forest_classifier_obj = RandomForestClassifier()
-    random_forest_classifier_obj.fit(X_train, y_train)
+    random_forest_classifier_obj.fit(x_train, y_train)
 
     return random_forest_classifier_obj
 
 
-def get_gaussian_nb_model(X_train, y_train):
+def get_gaussian_nb_model(x_train, y_train):
     gaussian_nb_obj = GaussianNB()
-    gaussian_nb_obj.fit(X_train, y_train)
+    gaussian_nb_obj.fit(x_train, y_train)
 
     return gaussian_nb_obj
 

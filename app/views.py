@@ -124,12 +124,12 @@ def upload(request):
             if os.path.exists(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'oh_encoder.json'):
                 os.remove(media_path + os.sep + user + os.sep + 'documents' + os.sep + 'oh_encoder.json')
 
-            myFile = request.FILES.get('myFile')
-            if myFile:
-                if os.path.splitext(myFile.name)[-1] == ".csv":
+            my_file = request.FILES.get('myFile')
+            if my_file:
+                if os.path.splitext(my_file.name)[-1] == ".csv":
                     fs = FileSystemStorage(location=media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files' + os.sep)
-                    myFile.name = get_valid_filename(myFile.name)
-                    fs.save(myFile.name, myFile)
+                    my_file.name = get_valid_filename(my_file.name)
+                    fs.save(my_file.name, my_file)
                     messages.success(request, 'File Uploaded')
                     return redirect('/eda/')
                 else:
@@ -164,6 +164,7 @@ def eda(request):
     user = request.user.id if request.user.id else request.session['guest_session_id']
 
     if user is not None:
+        explanation_strings = []
         file_path = media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'input_files'
         list_of_files = glob.glob(file_path + os.sep + '*')
 
@@ -210,7 +211,6 @@ def eda(request):
             data_corr = df.corr()
 
             # data_corr_columns = data_corr.columns
-            explanation_strings = []
             # explanation_done_columns = []
             # for col1 in data_corr_columns:
             #     for col2 in data_corr_columns:
@@ -243,7 +243,8 @@ def eda(request):
             return redirect('/data_preprocessing/')
 
         context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols,
-                   'df_describe_html': df_describe_html, 'png_files_path': png_files_path, 'corelation_explanation': explanation_strings}
+                   'df_describe_html': df_describe_html, 'png_files_path': png_files_path,
+                   'corelation_explanation': explanation_strings}
         return render(request, "eda.html", context)
     else:
         return redirect('/signin/')
@@ -310,7 +311,7 @@ def data_preprocessing(request):
 
         oh_encoder_dict = {}
         for i in oh_encoder.get_params()['mapping']:
-            temp_dict = i['mapping'].to_dict()
+            temp_dict = {k: v for k, v in i['mapping'].to_dict().items() if pd.notna(k)}
             temp_dict_in_str = json.dumps(temp_dict)
             temp_dict_lowercase = json.loads(temp_dict_in_str.lower())
             oh_encoder_dict[i['col']] = temp_dict_lowercase
@@ -490,7 +491,6 @@ def model_evaluation(request):
         my_data = [['Model', model_name], ['Mean Absolute Error', mae],
                    ['Mean Squared Error', mse], ['Root Mean Squared Error', rmse]]
 
-
     else:
         # print(model_name)
         # cm = confusion_matrix(y_test, y_pred)
@@ -655,19 +655,29 @@ def model_testing(request, button_id):
             to_be_predicted = []
             for column, value in zip(col_names, predict):
                 if one_hot_decoder and column in one_hot_decoder.keys():
+                    if value.lower() not in one_hot_decoder[column]:
+                        messages.error(request,f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
+                        context = {'model_name': model_name, 'col': zip(col_names, predict), 'project_name': project_name}
+                        return render(request, 'model_testing.html', context)
                     val = one_hot_decoder[column][value.lower()]
                     if isinstance(val, int):
                         to_be_predicted.append(int(val))
                     else:
                         to_be_predicted.append(float(val))
                 else:
-                    if isinstance(value, int):
-                        to_be_predicted.append(int(value))
-                    else:
-                        to_be_predicted.append(float(value))
+                    try:
+                        if isinstance(value, int):
+                            to_be_predicted.append(int(value))
+                        else:
+                            to_be_predicted.append(float(value))
+                    except (Exception,):
+                        messages.error(request, f'Improper value for column: "{column}"')
+                        context = {'model_name': model_name, 'col': zip(col_names, predict), 'project_name': project_name}
+                        return render(request, 'model_testing.html', context)
 
             model_file = pickle.loads(model_file)
             to_be_predicted = [to_be_predicted]
+            print(to_be_predicted)
             if saved_model_type not in ['Regression', 'Linear Regression']:
                 sc_X.fit(pd.DataFrame(X))
                 to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))

@@ -2,6 +2,18 @@
 {% load static %}
 {% block content %}
 
+{% if messages %}
+{% for message in messages %}
+<div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
+    <strong>
+        {{message}}
+    </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
 <div>
 
     {% if project_name %}
