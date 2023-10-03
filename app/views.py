@@ -624,10 +624,11 @@ def profile_data(request):
             button_id = request.POST.get('test_model_button')
             if '_delete' in button_id:
                 model_instance = get_object_or_404(TrainedModels, id=str(button_id).split("_")[0])
+                project_name = model_instance.project_name
                 document = model_instance.document
                 document.delete()
                 model_instance.delete()
-                messages.success(request, 'Project Deleted Successfully!')
+                messages.success(request, f'Project "{project_name}" Deleted Successfully!')
                 return redirect('/profile_data/')
             return redirect(f'/model_testing/{int(button_id)}')
         document = Document.objects.filter(user_id=user)
@@ -653,6 +654,8 @@ def model_testing(request, button_id):
     user_id = user.id
     if user_id:
         model_data = TrainedModels.objects.filter(user=user_id, id=button_id).values()  # TODO  : NEED to fix this
+        if not model_data:
+            return redirect('/profile_data/')
         df_test, y = None, None
         project_name = model_data[0]['project_name']
         model_name = model_data[0]['model_name']
