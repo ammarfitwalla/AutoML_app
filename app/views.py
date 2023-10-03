@@ -306,12 +306,12 @@ def data_preprocessing(request):
                     df_preprocessing[i] = df_preprocessing[i].fillna((df_preprocessing[i].median()))
 
         selected_check_list = request.POST.getlist('checkbox_name')
-        oh_encoder = ce.OrdinalEncoder(cols=categorical_col_names)
+        oh_encoder = ce.OrdinalEncoder(cols=categorical_col_names, handle_missing='error')
         df_preprocessing = oh_encoder.fit_transform(df_preprocessing)
 
         oh_encoder_dict = {}
         for i in oh_encoder.get_params()['mapping']:
-            temp_dict = {k: v for k, v in i['mapping'].to_dict().items() if pd.notna(k)}
+            temp_dict = i['mapping'].to_dict()
             temp_dict_in_str = json.dumps(temp_dict)
             temp_dict_lowercase = json.loads(temp_dict_in_str.lower())
             oh_encoder_dict[i['col']] = temp_dict_lowercase
