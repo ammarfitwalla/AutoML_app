@@ -8,12 +8,12 @@ import mimetypes
 from .utils import *
 import seaborn as sns
 from app.models import *
-from sklearn import metrics, utils, preprocessing
 import category_encoders as ce
 from django.contrib import messages
 from pandas.api.types import is_string_dtype
-from django.utils.text import get_valid_filename
 from sklearn.preprocessing import StandardScaler
+from django.utils.text import get_valid_filename
+from sklearn import metrics, utils, preprocessing
 from sklearn.model_selection import train_test_split
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import authenticate, login, logout, decorators
@@ -653,7 +653,7 @@ def model_testing(request, button_id):
     user = request.user
     user_id = user.id
     if user_id:
-        model_data = TrainedModels.objects.filter(user=user_id, id=button_id).values()  # TODO  : NEED to fix this
+        model_data = TrainedModels.objects.filter(user=user_id, id=button_id).values()
         if not model_data:
             return redirect('/profile_data/')
         df_test, y = None, None
