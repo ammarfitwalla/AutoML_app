@@ -33,3 +33,5 @@ tzdata==2022.2
 whitenoise==6.2.0
 wincertstore==0.2
 xgboost==1.6.2
+
+requests~=2.28.1

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
+    <strong>
+        {{message}}
+    </strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div style="text-align: -webkit-center;" class="animated fadeIn text-muted">
+    <h3 class="eda_heading" style="margin-bottom:30px;">ADVANCED - EXPLORATORY DATA ANALYSIS (EDA) - COMING SOON!</h3>
+
+    <div class="card">
+        <img class="imgContainerClass" src="{% static 'img/under_construction.gif' %}">
+    </div>
+
+</div>
+
+<p class="footer-heart">
+  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
+<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
+</p>
+
+<style>
+.card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    transition: 0.2s;
+    border-radius: 10px;
+    padding: 1.1%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    border-color: #445e78!important;
+    border-top: medium;
+    width:60%;
+}
+.card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+
+.container {
+  padding: 2px 16px;
+}
+
+</style>
+<script>
+// Show the preloader when the page is being unloaded (refreshed)
+window.onbeforeunload = function() {
+    document.getElementById('overlay').style.display = 'block';
+};
+
+// Hide the preloader when the page is fully loaded
+window.onload = function() {
+    document.getElementById('overlay').style.display = 'none';
+};
+</script>
+{% endblock %}
+

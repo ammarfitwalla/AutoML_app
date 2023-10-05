@@ -249,6 +249,8 @@ def eda(request):
     else:
         return redirect('/signin/')
 
+def advanced_eda(request):
+    return render(request, 'advanced_eda.html')
 
 # @decorators.login_required
 def data_preprocessing(request):
@@ -440,7 +442,8 @@ def model_selection(request):
             actual_pred_df = X_test.copy()
             actual_pred_df[dependent_variable] = y_test
             actual_pred_df[dependent_variable + ' (Predictions)'] = model_details['predictions']
-            actual_pred_df = actual_pred_df.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False)
+            actual_pred_df = actual_pred_df.to_html(classes="table table-bordered table-striped table-hover custom-table",
+                index=False )#, table_id='myTable')
 
             with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'model', 'wb') as files:
                 pickle.dump(model, files)
