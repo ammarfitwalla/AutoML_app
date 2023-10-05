@@ -594,8 +594,7 @@ def save_model(request):
 
             # ============ filtering docs with user id and uploaded doc name ============ #
             doc_id = Document.objects.filter(user_id=user.id, document=doc_id)
-            last_doc_id = doc_id[0].id
-            # last_doc_id = doc_id[len(doc_id)-1].id
+            last_doc_id = doc_id[len(doc_id)-1].id
 
             # ============ creating an instance for trained model to be saved ============ #
             doc_instance = Document.objects.get(id=last_doc_id)
