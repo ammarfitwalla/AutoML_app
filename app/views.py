@@ -592,11 +592,6 @@ def save_model(request):
             doc_instance = Document(user_id=user.id, document=file_name)
             doc_instance.save()
 
-            # ============ filtering docs with user id and uploaded doc name ============ #
-            last_doc = Document.objects.filter(user_id=user.id).latest('id')
-            last_doc_id = last_doc.id
-            print(last_doc_id)
-
             X_json = X.to_json(orient='records')
             data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name,
                 model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type,
