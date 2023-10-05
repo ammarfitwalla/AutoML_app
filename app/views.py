@@ -589,15 +589,13 @@ def save_model(request):
             file_path = media_path + os.sep + str(user_id) + os.sep + 'documents' + os.sep + 'input_files'
             list_of_files = glob.glob(file_path + os.sep + '*')
             file_name = max(list_of_files, key=os.path.getmtime)
-            doc_id = Document(user_id=user.id, document=file_name)
-            doc_id.save()
+            doc_instance = Document(user_id=user.id, document=file_name)
+            doc_instance.save()
 
             # ============ filtering docs with user id and uploaded doc name ============ #
-            doc_id = Document.objects.filter(user_id=user.id, document=doc_id)
-            last_doc_id = doc_id[len(doc_id)-1].id
-
-            # ============ creating an instance for trained model to be saved ============ #
-            doc_instance = Document.objects.get(id=last_doc_id)
+            last_doc = Document.objects.filter(user_id=user.id).latest('id')
+            last_doc_id = last_doc.id
+            print(last_doc_id)
 
             X_json = X.to_json(orient='records')
             data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name,
