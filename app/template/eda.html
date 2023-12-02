@@ -59,7 +59,7 @@
                     <div class="imgContainer" style="display: flex; justify-content: space-evenly;">
                 {% endif %}
                     <img class="imgContainerClass" src="../../media/{{ graph }}"
-                         style="width: 55%; height: auto; border:groove;">
+                         style="height: auto; border:groove;">
                 {% if forloop.counter|divisibleby:2 or forloop.last %}
                     </div>
                 {% endif %}
@@ -105,6 +105,11 @@
 </p>
 
 <style>
+@media screen and (max-width: 600px) {
+.imgContainerClass {
+    width: 100%;
+}
+}
 .card {
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
     transition: 0.2s;

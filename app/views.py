@@ -127,7 +127,8 @@ def upload(request):
             my_file = request.FILES.get('myFile')
             if my_file:
                 if os.path.splitext(my_file.name)[-1] == ".csv":
-                    fs = FileSystemStorage(location=media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files' + os.sep)
+                    fs = FileSystemStorage(
+                        location=media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files' + os.sep)
                     my_file.name = get_valid_filename(my_file.name)
                     fs.save(my_file.name, my_file)
                     messages.success(request, 'File Uploaded')
@@ -147,10 +148,11 @@ def upload(request):
             mime_type, _ = mimetypes.guess_type(filepath)
             response = HttpResponse(path, content_type=mime_type)
             response['Content-Disposition'] = "attachment; filename=%s" % filename
+            path.close()
             return response
         else:
             shutil.copy(media_path + os.sep + 'sample_csv' + os.sep + list(request.POST.keys())[-1],
-                media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
+                        media_path + os.sep + user + os.sep + 'documents' + os.sep + 'input_files')
             return redirect('/eda/')
 
     return render(request, 'upload.html')
@@ -173,13 +175,17 @@ def eda(request):
 
         file_name = max(list_of_files, key=os.path.getmtime)
         df = file_to_df(file_name)
+        pd.set_option('display.precision', 2)
+        pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
         df_html = divide_columns_into_df(df.sample(10))
-        df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i in df_html]
+        df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i
+                   in df_html]
         df_n_rows, df_n_cols = df.shape[0], df.shape[1]
         df_cols = df.columns.tolist()
         df_describe = divide_columns_into_df(df.describe())
-        df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in df_describe]
+        df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in
+                            df_describe]
         all_categorical = [col for col in df.columns if 1 < df[col].nunique() < 15]
 
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
@@ -235,7 +241,7 @@ def eda(request):
             correlation_name = folder + os.sep + 'correlation.png'
             plt.savefig(correlation_name, bbox_inches='tight', dpi=300)
             png_files_path.append(correlation_name)
-            
+
         except Exception as err:
             print(f"[ERROR PLOTTING]: Unable to plot the heatmap due to: {str(err)}")
 
@@ -249,8 +255,10 @@ def eda(request):
     else:
         return redirect('/signin/')
 
+
 def advanced_eda(request):
     return render(request, 'advanced_eda.html')
+
 
 # @decorators.login_required
 def data_preprocessing(request):
@@ -292,7 +300,8 @@ def data_preprocessing(request):
 
         slider_value = request.POST['slider_value']
         test_size_ratio = (100 - int(slider_value)) / 100
-        categorical_col_names = [col for col in df_preprocessing.columns if df_preprocessing[col].dtype == 'O' and df_preprocessing[col].nunique() < 15]
+        categorical_col_names = [col for col in df_preprocessing.columns if
+                                 df_preprocessing[col].dtype == 'O' and df_preprocessing[col].nunique() < 15]
 
         if df_null:
             for i in all_null_columns:
@@ -324,11 +333,13 @@ def data_preprocessing(request):
 
         if dependent_variable not in selected_check_list and df_col_numbers - len(selected_check_list) > 1:
             df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
-            df_preprocessing.to_csv(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
+            df_preprocessing.to_csv(
+                media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
             d = {'dependent_variable': dependent_variable, 'test_size_ratio': test_size_ratio,
                  'dependent_variable_type': str(df_preprocessing.dtypes[dependent_variable])}
 
-            with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + "df_preprocessed.json", "w") as outfile:
+            with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + "df_preprocessed.json",
+                      "w") as outfile:
                 json.dump(d, outfile)
 
             return redirect('/model_selection/')
@@ -347,7 +358,8 @@ def data_preprocessing(request):
 # @decorators.login_required
 def model_selection(request):
     all_ml_models = ['(AutoML) Regression', 'Linear Regression', '(AutoML) Classification', 'Logistic Regression',
-                     'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier', 'GaussianNB Classifier',
+                     'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier',
+                     'GaussianNB Classifier',
                      'SGD Classifier']
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
@@ -376,10 +388,10 @@ def model_selection(request):
 
     # if utils.multiclass.type_of_target(y) == 'continuous':
     #     y = utils.multiclass.type_of_target(y.astype('int'))
-        # print(utils.multiclass.type_of_target(y))
-        # lab_enc = preprocessing.LabelEncoder()
-        # encoded = lab_enc.fit_transform(y)
-        # print(utils.multiclass.type_of_target(encoded))
+    # print(utils.multiclass.type_of_target(y))
+    # lab_enc = preprocessing.LabelEncoder()
+    # encoded = lab_enc.fit_transform(y)
+    # print(utils.multiclass.type_of_target(encoded))
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_ratio, random_state=77, shuffle=True)
     p_X_train = X_train.copy()
@@ -394,15 +406,12 @@ def model_selection(request):
         if evaluation_button is None:
             model_details = {}
             if model_name in ['(AutoML) Regression', '(AutoML) Classification']:
-                # model_name = model_name
-                # model_name = model_name.split(" ")[-1]
                 if model_name.split(" ")[-1] == 'Classification':
                     X_train = sc_X.fit_transform(X_train)
                     X_test = sc_X.transform(X_test)
                     classifier = True
 
                 automl_model_name, model = get_automl_model((model_name.split(" ")[-1]).lower(), X_train, y_train)
-                print("automl_model_name", automl_model_name)
                 model_details['model_name'] = automl_model_name
 
             else:
@@ -442,13 +451,15 @@ def model_selection(request):
             actual_pred_df = X_test.copy()
             actual_pred_df[dependent_variable] = y_test
             actual_pred_df[dependent_variable + ' (Predictions)'] = model_details['predictions']
-            actual_pred_df = actual_pred_df.to_html(classes="table table-bordered table-striped table-hover custom-table",
-                index=False )#, table_id='myTable')
+            actual_pred_df = actual_pred_df.to_html(
+                classes="table table-bordered table-striped table-hover custom-table",
+                index=False)  # , table_id='myTable')
 
             with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'model', 'wb') as files:
                 pickle.dump(model, files)
 
-            with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + "model_details.json", "w") as outfile:
+            with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + "model_details.json",
+                      "w") as outfile:
                 json.dump(model_details, outfile, cls=NumpyArrayEncoder)
 
             all_ml_models.remove(chosen_model_name)
@@ -594,8 +605,10 @@ def save_model(request):
 
             X_json = X.to_json(orient='records')
             data = TrainedModels(user_id=user.id, document=doc_instance, project_name=project_name,
-                model_file=pickle_file, column_names=X_cols, model_name=model_name, model_type=used_model_type,
-                oh_encoders=oh_encoder, independent_variable=X_json, dependent_variable=y.columns.tolist()[0])
+                                 model_file=pickle_file, column_names=X_cols, model_name=model_name,
+                                 model_type=used_model_type,
+                                 oh_encoders=oh_encoder, independent_variable=X_json,
+                                 dependent_variable=y.columns.tolist()[0])
             data.save()
 
             # ============ Clearing memory - Comment to keep the files ============
@@ -628,7 +641,8 @@ def profile_data(request):
             return redirect(f'/model_testing/{int(button_id)}')
         document = Document.objects.filter(user_id=user)
         if document:
-            model_data = TrainedModels.objects.filter(document_id__in=document.values_list('id', flat=True)).values_list('project_name', flat=True)
+            model_data = TrainedModels.objects.filter(
+                document_id__in=document.values_list('id', flat=True)).values_list('project_name', flat=True)
             docs_name_list = [str(doc).split("/")[-1] for doc in document]
             projects_name_list = [str(md) for md in model_data]
             model_id = list(model_data.values_list('id', flat=True))
@@ -668,8 +682,10 @@ def model_testing(request, button_id):
             for column, value in zip(col_names, predict):
                 if one_hot_decoder and column in one_hot_decoder.keys():
                     if value.lower() not in one_hot_decoder[column]:
-                        messages.error(request,f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
-                        context = {'model_name': model_name, 'col': zip(col_names, predict), 'project_name': project_name}
+                        messages.error(request,
+                                       f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
+                        context = {'model_name': model_name, 'col': zip(col_names, predict),
+                                   'project_name': project_name}
                         return render(request, 'model_testing.html', context)
                     val = one_hot_decoder[column][value.lower()]
                     if isinstance(val, int):
@@ -684,7 +700,8 @@ def model_testing(request, button_id):
                             to_be_predicted.append(float(value))
                     except (Exception,):
                         messages.error(request, f'Improper value for column: "{column}"')
-                        context = {'model_name': model_name, 'col': zip(col_names, predict), 'project_name': project_name}
+                        context = {'model_name': model_name, 'col': zip(col_names, predict),
+                                   'project_name': project_name}
                         return render(request, 'model_testing.html', context)
 
             model_file = pickle.loads(model_file)
@@ -694,8 +711,10 @@ def model_testing(request, button_id):
                 to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
             test_data = [[y, str(model_file.predict(to_be_predicted)[0])]]
             df_test = pd.DataFrame(test_data, columns=['Target Variable', 'Prediction'])
-            df_test = df_test.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False)
-        context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict), 'project_name': project_name}
+            df_test = df_test.to_html(classes="table table-bordered table-striped table-hover custom-table",
+                                      index=False)
+        context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict),
+                   'project_name': project_name}
         return render(request, 'model_testing.html', context)
     else:
         return redirect('/signin/')

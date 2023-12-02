@@ -34,22 +34,42 @@ font-size:30px;
     color: white;
 }
 
-@media (max-width: 600px) {
-.imgContainer{
-    display: flex;
-    justify-content: space-evenly;
-    margin-left: -10%;
-    flex-direction: column;
+
+@media (max-width: 800px) {
+    .imgContainer {
+        display: flex;
+        justify-content: space-evenly;
+        /* Adjust the padding to create space on the left */
+        padding-left: 5%;
+        flex-direction: column;
+    }
+
+    .imgContainerClass {
+        width: 100%;
+        height: auto;
+        border: groove;
+    }
 }
 
-.imgContainerClass{
-width: 100%;
-height: auto;
-border:groove;
-}
+@media (min-width: 1024px) {
+        .imgContainerClass {
+        width: 55%;
+        height: auto;
+        border: groove;
+    }
+
 }
 
+@media (min-width: 801px) and (max-width: 1023px) {
+        .imgContainerClass {
+        width: 55%;
+        height: auto;
+        border: groove;
+    }
 
+}
+
+}
 .multiselect {
   width: 200px;
 }
