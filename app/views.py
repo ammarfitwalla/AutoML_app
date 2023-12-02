@@ -175,6 +175,7 @@ def eda(request):
 
         file_name = max(list_of_files, key=os.path.getmtime)
         df = file_to_df(file_name)
+
         pd.set_option('display.precision', 2)
         pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
@@ -332,6 +333,12 @@ def data_preprocessing(request):
             json.dump(oh_encoder_dict, outfile)
 
         if dependent_variable not in selected_check_list and df_col_numbers - len(selected_check_list) > 1:
+            for column in df_preprocessing:
+                if column not in selected_check_list and column not in categorical_col_names:
+                    column_type = pd.api.types.infer_dtype(df_preprocessing[column])
+                    if column_type == 'string':
+                        selected_check_list.append(column)
+            print(selected_check_list)
             df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
             df_preprocessing.to_csv(
                 media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
