@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import authenticate, login, logout, decorators
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # logger = logging.getLogger(__name__)
 
@@ -179,14 +180,26 @@ def eda(request):
         pd.set_option('display.precision', 2)
         pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
-        df_html = divide_columns_into_df(df.sample(10))
-        df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i
-                   in df_html]
         df_n_rows, df_n_cols = df.shape[0], df.shape[1]
         df_cols = df.columns.tolist()
         df_describe = divide_columns_into_df(df.describe())
         df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in
                             df_describe]
+
+        df_html = divide_columns_into_df(df.sample(20))
+        df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i
+                   in df_html]
+        # items_per_page = 10
+        # paginator = Paginator(df_html, items_per_page)
+        # page_number = request.GET.get('page', 1)
+        # print(page_number)
+        # try:
+        #     paginated_df = paginator.page(page_number)
+        # except PageNotAnInteger:
+        #     paginated_df = paginator.page(1)
+        # except EmptyPage:
+        #     paginated_df = paginator.page(paginator.num_pages)
+
         all_categorical = [col for col in df.columns if 1 < df[col].nunique() < 15]
 
         folder = media_path + os.sep + str(user) + os.sep + 'graphs'
@@ -408,9 +421,11 @@ def model_selection(request):
         sc_X = StandardScaler()
         model_name = request.POST.get('model_name')
         chosen_model_name = model_name
-        evaluation_button = request.POST.get('evaluation')
+        train_model_button = request.POST.get('train_model_button')
+        # evaluation_button = request.POST.get('evaluation')
+        save_model_button = request.POST.get('save_model_button')
 
-        if evaluation_button is None:
+        if train_model_button:
             model_details = {}
             if model_name in ['(AutoML) Regression', '(AutoML) Classification']:
                 if model_name.split(" ")[-1] == 'Classification':
@@ -458,9 +473,41 @@ def model_selection(request):
             actual_pred_df = X_test.copy()
             actual_pred_df[dependent_variable] = y_test
             actual_pred_df[dependent_variable + ' (Predictions)'] = model_details['predictions']
-            actual_pred_df = actual_pred_df.to_html(
-                classes="table table-bordered table-striped table-hover custom-table",
-                index=False)  # , table_id='myTable')
+            # actual_pred_df = actual_pred_df.to_html(
+            #     classes="table table-bordered table-striped table-hover custom-table",
+            #     index=False)  # , table_id='myTable')
+
+            model_name = model_details['model_name']
+            model_eva_type = model_details['model_type']
+            y_pred = model_details['predictions']
+
+            if model_eva_type in ['(AutoML) Regression', 'Linear Regression']:
+                folder_ = media_path + os.sep + user + os.sep + 'regression_graphs'
+                check_dir_exists(folder_)
+                # png_file_name_ = folder_ + os.sep + "true_vs_predictions.png"
+                mae = metrics.mean_absolute_error(y_test, y_pred)
+                mse = metrics.mean_squared_error(y_test, y_pred)
+                rmse = np.sqrt(metrics.mean_squared_error(y_test, y_pred))
+                my_data = [['Model', model_name], ['Mean Absolute Error', mae],
+                           ['Mean Squared Error', mse], ['Root Mean Squared Error', rmse]]
+            else:
+                try:
+                    accuracy = '%.2f' % (metrics.accuracy_score(y_test, y_pred) * 100) + ' %'
+                    recall = '%.2f' % (metrics.recall_score(y_test, y_pred) * 100) + ' %'
+                    f1 = '%.2f' % (metrics.f1_score(y_test, y_pred) * 100) + ' %'
+                    precision = '%.2f' % (metrics.precision_score(y_test, y_pred) * 100) + ' %'
+
+                except (Exception,):
+                    messages.info(request, 'For Regression problem, use only Regression model')
+                    return redirect('/model_selection/')
+                    # return render(request, 'model_evaluation.html')
+
+                my_data = [['Model', model_name], ['Accuracy Score', accuracy],
+                           ['Recall Score', recall], ['F1 score', f1], ['Precision', precision]]
+
+            df_ev = pd.DataFrame(my_data, columns=['Metrics', 'Values'])
+            df_ev_to_html = df_ev.to_html(classes="table table-bordered table-striped table-hover custom-table",
+                                          index=False)
 
             with open(media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'model', 'wb') as files:
                 pickle.dump(model, files)
@@ -474,14 +521,22 @@ def model_selection(request):
 
             messages.success(request, f'Model "{str(model_name)}" has been trained successfully!')
 
-            context = {'actual_pred_df': actual_pred_df, 'model_name_list': all_ml_models}
+            if not classifier:
+                actual_pred_df[dependent_variable + ' (Predictions)'] = actual_pred_df[
+                    dependent_variable + ' (Predictions)'].round(2)
+                differences = np.abs(y_test.values - y_pred).round(2)
+                actual_pred_df['Differences'] = differences
+
+            actual_pred_df = actual_pred_df.to_html(
+                classes="table table-bordered table-striped table-hover custom-table",
+                index=False)
+
+            context = {'actual_pred_df': actual_pred_df, 'model_name_list': all_ml_models,
+                       'df_ev_to_html': df_ev_to_html}
 
             return render(request, 'model_selection.html', context)
-        else:
 
-            # TODO: check model details json, model pickle file and load it in next function
-            # model_details = {'X': X, 'y': y, 'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
-
+        elif save_model_button:
             X.to_csv(docs_path + os.sep + 'X.csv')
             y.to_csv(docs_path + os.sep + 'y.csv')
             X_train.to_csv(docs_path + os.sep + 'X_train.csv')
@@ -489,7 +544,10 @@ def model_selection(request):
             X_test.to_csv(docs_path + os.sep + 'X_test.csv')
             y_test.to_csv(docs_path + os.sep + 'y_test.csv')
 
-            return redirect('/model_evaluation/')
+            # # TODO: check model details json, model pickle file and load it in next function
+            # # model_details = {'X': X, 'y': y, 'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
+
+            return redirect('/save_model/')
 
     context = {'model_name_list': all_ml_models}
     return render(request, 'model_selection.html', context)  # except:  #     return redirect('/eda/')

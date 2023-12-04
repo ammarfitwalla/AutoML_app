@@ -19,8 +19,8 @@
 <h3 class="eda_heading">MACHINE LEARNING</h3>
 <form method="POST" id="form-id">
     {% csrf_token %}
-        <div class="card">
-<!--        <label style="margin-top: 20px;" for="model">Choose a model:&nbsp;&nbsp;</label>-->
+    <div class="card">
+        <!--        <label style="margin-top: 20px;" for="model">Choose a model:&nbsp;&nbsp;</label>-->
         <select id="model" name="model_name">
             {% for model in model_name_list %}
             <option value="{{model}}">{{model}}</option>
@@ -29,7 +29,7 @@
 
         &nbsp;&nbsp;&nbsp;
         <!--        ---------------------------------------------------------------------------->
-<!--        <div id="showdivid" style="display:none;">-->
+        <!--        <div id="showdivid" style="display:none;">-->
         <div style="display:none;">
             {% if lr %}
             <label>{{lr}} </label>
@@ -40,75 +40,96 @@
         <!--        ---------------------------------------------------------------------------->
 
         <br>
-        <button type="submit" class="btn btn-primary btn-sm" value="MODEL TRAINING">MODEL TRAINING</button>
-        {% if actual_pred_df %}
-        <button type="submit" name="evaluation" class="btn btn-primary btn-sm" value="evaluation">MODEL EVALUATION
-        </button>
-        {% endif %}
+        <button type="submit" class="btn btn-primary btn-sm" name="train_model_button" value="MODEL TRAINING">TRAIN MODEL</button>
+        <!--        {% if actual_pred_df %}-->
+        <!--        <button type="submit" name="evaluation" class="btn btn-primary btn-sm" value="evaluation">MODEL EVALUATION-->
+        <!--        </button>-->
+        <!--        {% endif %}-->
     </div>
+
+    {% if df_ev_to_html %}
+    <h3 class="eda_heading">MACHINE LEARNING MODEL EVALUATION</h3>
+    <div class="card" style="display: block;">
+        {{df_ev_to_html | safe}}
+        <!--        <label>Click here to save the model: </label>-->
+        <div style="text-align: -webkit-center;">
+            <button type="submit" class="btn btn-primary btn-sm" name="save_model_button" value="SAVE MODEL">SAVE MODEL</button>
+<!--            <a type="submit" name="save_model" class="btn btn-primary btn-sm" href="{% url 'save_model' %}">Save Model</a>-->
+        </div>
+    </div>
+    {% endif %}
+
+    {% if actual_pred_df %}
     <div>
-        {% if actual_pred_df %}
+        <h3 class="eda_heading">MACHINE LEARNING MODEL PREDICTIONS</h3>
         {{actual_pred_df | safe}}
-        {% endif %}
     </div>
+
+    {% endif %}
 </form>
-<div id="overlay" style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
-    <img id="loader" src="{% static 'img/loader_3.gif' %}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: auto; max-width: 100%; max-height: 100%;">
+<div id="overlay"
+     style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
+    <img id="loader" src="{% static 'img/loader_3.gif' %}"
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: auto; max-width: 100%; max-height: 100%;">
 </div>
 
 <p class="footer-heart">
-  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
-<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
+    Made with
+    <g-emoji class="g-emoji" alias="heart"
+             fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
+        <img class="emoji" alt="heart" height="20" width="20"
+             src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji>
+    | <a href="https://armin.id">ammarfitwalla</a>
 </p>
 
 <script>
-document.getElementById('form-id').addEventListener('submit', function() {
-document.getElementById('overlay').style.display = 'block';
-});
-window.onload = function() {
-document.getElementById('overlay').style.display = 'none';
-};
+    document.getElementById('form-id').addEventListener('submit', function() {
+    document.getElementById('overlay').style.display = 'block';
+    });
+    window.onload = function() {
+    document.getElementById('overlay').style.display = 'none';
+    };
 </script>
 
 <style>
-.card {
-box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-display: flex;
-flex-direction: row;
-transition: 0.2s;
-border-radius: 10px;
-padding: 1.1%;
-margin-bottom: 15px;
-border-color: #445e78!important;
-border-top: medium;
-}
-.card:hover {
-  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
-}
+    .card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: row;
+    transition: 0.2s;
+    border-radius: 10px;
+    padding: 1.1%;
+    margin-bottom: 15px;
+    border-color: #445e78!important;
+    border-top: medium;
+    }
+    .card:hover {
+      box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+    }
 </style>
 
 {% endblock %}
 
 {% block script %}
 <script>
-$(document).ready(function(){
-    url = '/model_selection/';
-    $('select#model').change(function(){
-        $('#showdivid').show();
-        data = $(this).val();
-        console.log('data', data)
-        $.ajax({
-            url: url,
-            data: {'data': data},
-            success: function(res){
-                console.log('result', res);
-            },
-            error: function(err){
-                console.log('error', err);
-            },
+    $(document).ready(function(){
+        url = '/model_selection/';
+        $('select#model').change(function(){
+            $('#showdivid').show();
+            data = $(this).val();
+            console.log('data', data)
+            $.ajax({
+                url: url,
+                data: {'data': data},
+                success: function(res){
+                    console.log('result', res);
+                },
+                error: function(err){
+                    console.log('error', err);
+                },
+            });
         });
     });
-});
 </script>
 
 {% endblock script %}

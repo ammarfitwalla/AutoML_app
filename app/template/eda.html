@@ -33,11 +33,31 @@
     <div class="card">
     <h4 class="eda_heading" style="margin:10px;">10 DATASET ROWS</h4>
         {% if df_html %}
-        <div>
-            {% for df in df_html %}
-            {{df | safe}}
-            {% endfor %}
-        </div>
+            <div>
+                {% for df in df_html %}
+                    {{df | safe}}
+                {% endfor %}
+            </div>
+
+<!--            &lt;!&ndash; Pagination links &ndash;&gt;-->
+<!--            <div class="pagination">-->
+<!--                <span class="step-links">-->
+<!--                    {% if df_html.has_previous %}-->
+<!--                        <a href="?page=1">&laquo; first</a>-->
+<!--                        <a href="?page={{ df_html.previous_page_number }}">previous</a>-->
+<!--                    {% endif %}-->
+
+<!--                    <span class="current">-->
+<!--                        Page {{ df_html.number }} of {{ df_html.paginator.num_pages }}.-->
+<!--                    </span>-->
+
+<!--                    {% if df_html.has_next %}-->
+<!--                        <a href="?page={{ df_html.next_page_number }}">next</a>-->
+<!--                        <a href="?page={{ df_html.paginator.num_pages }}">last &raquo;</a>-->
+<!--                    {% endif %}-->
+<!--                </span>-->
+<!--            </div>-->
+
         {% endif %}
     </div>
 
@@ -142,4 +162,3 @@ window.onload = function() {
 };
 </script>
 {% endblock %}
-
