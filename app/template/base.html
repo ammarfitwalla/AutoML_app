@@ -17,6 +17,13 @@
     <!-- Your custom styles (optional) -->
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
 
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css"/>
+    <link href="https://cdn.datatables.net/v/dt/dt-1.13.8/datatables.min.css" rel="stylesheet">
+    <script src="https://cdn.datatables.net/v/dt/dt-1.13.8/datatables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
+
 </head>
 
 <body>
@@ -43,8 +50,8 @@
     {% endfor %}
     {% endif %}
     <div class="flex-center flex-column">
-<!--        <h4 class="animated fadeIn mb-4">A GYM WHERE YOU TRANSFORM YOUR DATA INTO MACHINE LEARNING MODELS</h4>-->
-<!--        <h4 class="eda_heading">A PLACE TO TRANSFORM YOUR DATA INTO MACHINE LEARNING MODELS</h4>-->
+        <!--        <h4 class="animated fadeIn mb-4">A GYM WHERE YOU TRANSFORM YOUR DATA INTO MACHINE LEARNING MODELS</h4>-->
+        <!--        <h4 class="eda_heading">A PLACE TO TRANSFORM YOUR DATA INTO MACHINE LEARNING MODELS</h4>-->
 
         <!--        <p class="animated fadeIn text-muted"></p>-->
         <br>
@@ -55,10 +62,14 @@
         <br>
     </div>
 
-<p class="footer-heart">
-Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
-<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
-</p>
+    <p class="footer-heart">
+        Made with
+        <g-emoji class="g-emoji" alias="heart"
+                 fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
+            <img class="emoji" alt="heart" height="20" width="20"
+                 src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji>
+        | <a href="https://armin.id">ammarfitwalla</a>
+    </p>
 
     {% endblock %}
 </div>

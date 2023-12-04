@@ -351,7 +351,6 @@ def data_preprocessing(request):
                     column_type = pd.api.types.infer_dtype(df_preprocessing[column])
                     if column_type == 'string':
                         selected_check_list.append(column)
-            print(selected_check_list)
             df_preprocessing = df_preprocessing.drop(selected_check_list, axis=1)
             df_preprocessing.to_csv(
                 media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'df_preprocessed.csv')
@@ -527,12 +526,15 @@ def model_selection(request):
                 differences = np.abs(y_test.values - y_pred).round(2)
                 actual_pred_df['Differences'] = differences
 
+            actual_pred_df_json = actual_pred_df.values.tolist()
+            actual_pred_df_columns = actual_pred_df.columns.to_list()
             actual_pred_df = actual_pred_df.to_html(
                 classes="table table-bordered table-striped table-hover custom-table",
-                index=False)
+                index=False, table_id="predictionTable")
 
             context = {'actual_pred_df': actual_pred_df, 'model_name_list': all_ml_models,
-                       'df_ev_to_html': df_ev_to_html}
+                       'df_ev_to_html': df_ev_to_html, 'actual_pred_df_json': actual_pred_df_json,
+                       'actual_pred_df_columns':actual_pred_df_columns}
 
             return render(request, 'model_selection.html', context)
 

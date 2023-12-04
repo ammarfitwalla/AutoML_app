@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-
-
 {% if messages %}
 {% for message in messages %}
 <div class="alert {{message.tags}} alert-dismissible fade show mb-0" role="alert">
@@ -130,6 +128,21 @@
             });
         });
     });
+
+    var dataSet = {{ actual_pred_df_json|safe }};
+    console.log(dataSet)
+    const columnNames = {{actual_pred_df_columns|safe}};
+
+    const columns = columnNames.map((name) => {
+        return { title: name };
+    });
+    console.log(columns)
+    new DataTable('#predictionTable', {
+        columns: columns,
+        data: dataSet,
+        responsive: true,
+        });
+
 </script>
 
 {% endblock script %}
