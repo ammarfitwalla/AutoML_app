@@ -31,12 +31,10 @@
     </div>
 
     <div class="card">
-    <h4 class="eda_heading" style="margin:10px;">10 DATASET ROWS</h4>
         {% if df_html %}
+            <h4 class="eda_heading" style="margin:10px;">10 DATASET ROWS</h4>
             <div>
-                {% for df in df_html %}
-                    {{df | safe}}
-                {% endfor %}
+                {{df_html | safe}}
             </div>
 
 <!--            &lt;!&ndash; Pagination links &ndash;&gt;-->
@@ -119,10 +117,10 @@
 <!--        <h5 class="animated fadeIn mb-3">Ammar Fitwalla - Neo-moment</h5>-->
 <!--    </div>-->
 </div>
-<p class="footer-heart">
-  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
-<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
-</p>
+<!--<p class="footer-heart">-->
+<!--  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">-->
+<!--<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>-->
+<!--</p>-->
 
 <style>
 @media screen and (max-width: 600px) {
@@ -160,5 +158,19 @@ window.onbeforeunload = function() {
 window.onload = function() {
     document.getElementById('overlay').style.display = 'none';
 };
+
+var dataSet = {{ df_html_json|safe }};
+const columnNames = {{df_html_columns|safe}};
+console.log(dataSet)
+const columns = columnNames.map((name) => {
+    return { title: name };
+});
+new DataTable('#dfTable', {
+    columns: columns,
+    data: dataSet,
+    sScrollX: true,
+    "sScrollXInner": "110%",
+    });
+
 </script>
 {% endblock %}

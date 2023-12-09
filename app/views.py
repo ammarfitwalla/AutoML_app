@@ -186,9 +186,16 @@ def eda(request):
         df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in
                             df_describe]
 
-        df_html = divide_columns_into_df(df.sample(20))
-        df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i
-                   in df_html]
+        # df_html = divide_columns_into_df(df.sample(20))
+        # df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i
+        #            in df_html]
+        df_html = df
+        df_html_json = df_html.values.astype(str).tolist()
+        df_html_columns = df_html.columns.astype(str).to_list()
+        df_html = df_html.to_html(
+            classes="table table-bordered table-striped table-hover custom-table",
+            index=False, table_id="dfTable")
+
         # items_per_page = 10
         # paginator = Paginator(df_html, items_per_page)
         # page_number = request.GET.get('page', 1)
@@ -264,7 +271,8 @@ def eda(request):
 
         context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols,
                    'df_describe_html': df_describe_html, 'png_files_path': png_files_path,
-                   'corelation_explanation': explanation_strings}
+                   'corelation_explanation': explanation_strings, "df_html_columns": df_html_columns,
+                   'df_html_json': df_html_json}
         return render(request, "eda.html", context)
     else:
         return redirect('/signin/')
@@ -378,8 +386,7 @@ def data_preprocessing(request):
 def model_selection(request):
     all_ml_models = ['(AutoML) Regression', 'Linear Regression', '(AutoML) Classification', 'Logistic Regression',
                      'Decision Tree Classifier', 'KNeighbors Classifier', 'Random Forest Classifier',
-                     'GaussianNB Classifier',
-                     'SGD Classifier']
+                     'GaussianNB Classifier', 'SGD Classifier']
     if 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
@@ -399,6 +406,12 @@ def model_selection(request):
     file.close()
     dependent_variable = json_file['dependent_variable']
     test_size_ratio = json_file['test_size_ratio']
+
+    oh_encoders_json_file = None
+    if os.path.isfile(docs_path + os.sep + 'oh_encoder.json'):
+        oh_encoders_file = open(docs_path + os.sep + 'oh_encoder.json')
+        oh_encoders_json_file = json.load(oh_encoders_file)
+        oh_encoders_file.close()
 
     # TODO : Display model based on dep var type
 
@@ -525,16 +538,26 @@ def model_selection(request):
                     dependent_variable + ' (Predictions)'].round(2)
                 differences = np.abs(y_test.values - y_pred).round(2)
                 actual_pred_df['Differences'] = differences
+            elif dependent_variable in oh_encoders_json_file.keys():
+                dependent_variable_mapping = oh_encoders_json_file.get(dependent_variable)
+                reversed_mapping = {v: k for k, v in dependent_variable_mapping.items()}
+                actual_pred_df[dependent_variable + ' (Predictions)'].replace(reversed_mapping, inplace=True)
+
+            if oh_encoders_json_file:
+                for column, column_mapping in oh_encoders_json_file.items():
+                    reversed_mapping = {v: k for k, v in column_mapping.items()}
+                    actual_pred_df[column].replace(reversed_mapping, inplace=True)
 
             actual_pred_df_json = actual_pred_df.values.tolist()
-            actual_pred_df_columns = actual_pred_df.columns.to_list()
+            actual_pred_df_columns = actual_pred_df.columns.astype(str).to_list()
             actual_pred_df = actual_pred_df.to_html(
                 classes="table table-bordered table-striped table-hover custom-table",
-                index=False, table_id="predictionTable")
+                index=False, table_id="predictionTable"
+            )
 
             context = {'actual_pred_df': actual_pred_df, 'model_name_list': all_ml_models,
                        'df_ev_to_html': df_ev_to_html, 'actual_pred_df_json': actual_pred_df_json,
-                       'actual_pred_df_columns':actual_pred_df_columns}
+                       'actual_pred_df_columns': actual_pred_df_columns}
 
             return render(request, 'model_selection.html', context)
 

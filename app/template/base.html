@@ -27,8 +27,6 @@
 </head>
 
 <body>
-
-
 {% if not form %}
 {% include "navbar.html" %}
 {% endif %}
@@ -62,19 +60,13 @@
         <br>
     </div>
 
-    <p class="footer-heart">
-        Made with
-        <g-emoji class="g-emoji" alias="heart"
-                 fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
-            <img class="emoji" alt="heart" height="20" width="20"
-                 src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji>
-        | <a href="https://armin.id">ammarfitwalla</a>
-    </p>
-
     {% endblock %}
 </div>
 <!-- /Start your project here-->
-
+<p class="footer-heart">
+  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">
+<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>
+</p>
 <!-- SCRIPTS -->
 <!-- JQuery -->
 <script type="text/javascript" src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
@@ -88,6 +80,7 @@
 <script type="text/javascript" src="{% static 'js/mdb.min.js' %}"></script>
 
 </body>
+
 
 </html>
 
