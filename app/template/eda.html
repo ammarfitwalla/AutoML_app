@@ -26,6 +26,11 @@
                 <label><b>{{col}}, </b></label>
                 {% endfor %}
             </li>
+            {% if missing_value_message %}
+                <li><label>Overall percentage of missing values: <b>{{ missing_value_message }}%</b></label></li>
+            {% else %}
+                <li><label>Great news! There are no missing values in the dataset.</label></li>
+            {% endif %}
         </ul>
 
     </div>
@@ -59,16 +64,15 @@
         {% endif %}
     </div>
 
+    {% if df_describe_html %}
     <div class="card">
         <h4 class="eda_heading" style="margin:10px;">SHORT DESCRIPTION</h4>
-        {% if df_describe_html %}
-        <div>
-            {% for df in df_describe_html %}
-            {{df | safe}}
-            {% endfor %}
+        <div class="table-container">
+            {{df_describe_html | safe}}
         </div>
-        {% endif %}
     </div>
+    {% endif %}
+
 
     <h4 class="eda_heading" style="margin:30px;">GRAPHICAL REPRESENTATION BELOW</h4>
         {% if png_files_path %}
@@ -147,6 +151,10 @@
   padding: 2px 16px;
 }
 
+.table-container {
+    overflow-x: auto;
+}
+
 </style>
 <script>
 // Show the preloader when the page is being unloaded (refreshed)
@@ -161,7 +169,6 @@ window.onload = function() {
 
 var dataSet = {{ df_html_json|safe }};
 const columnNames = {{df_html_columns|safe}};
-console.log(dataSet)
 const columns = columnNames.map((name) => {
     return { title: name };
 });
@@ -171,6 +178,7 @@ new DataTable('#dfTable', {
     sScrollX: true,
     "sScrollXInner": "110%",
     });
+
 
 </script>
 {% endblock %}

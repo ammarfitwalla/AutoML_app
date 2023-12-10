@@ -182,14 +182,33 @@ def eda(request):
 
         df_n_rows, df_n_cols = df.shape[0], df.shape[1]
         df_cols = df.columns.tolist()
-        df_describe = divide_columns_into_df(df.describe())
-        df_describe_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table") for i in
-                            df_describe]
+        missing_percentage = (df.isnull().sum() / len(df)) * 100
+
+        # if missing_percentage.max() == 0:
+        #     missing_value_message = "Great news! There are no missing values in the dataset."
+        # else:
+        #     missing_value_message = "% of missing data in columns:\n"
+        #     for index, (column, percentage) in enumerate(missing_percentage.iteritems()):
+        #         if percentage > 0:
+        #             missing_value_message += f"{column}: {percentage:.2f}%"
+        #             if index < len(missing_percentage) - 1:
+        #                 missing_value_message += ", "
+        #             else:
+        #                 missing_value_message += "\n"
+
+        if missing_percentage.max() == 0:
+            missing_value_message = None
+        else:
+            missing_value_message = round(missing_percentage.mean(), 2)
+
+        df_describe = df.describe()
+        df_describe_html = df_describe.to_html(classes="table table-bordered table-striped table-hover custom-table",
+                                               table_id="dfDescribeTable")
 
         # df_html = divide_columns_into_df(df.sample(20))
         # df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i
         #            in df_html]
-        df_html = df
+        df_html = df.sample(100)
         df_html_json = df_html.values.astype(str).tolist()
         df_html_columns = df_html.columns.astype(str).to_list()
         df_html = df_html.to_html(
@@ -269,7 +288,8 @@ def eda(request):
         if request.method == 'POST':
             return redirect('/data_preprocessing/')
 
-        context = {'df_html': df_html, 'df_n_rows': df_n_rows, 'df_n_cols': df_n_cols, 'df_cols': df_cols,
+        context = {'missing_value_message': missing_value_message, 'df_html': df_html, 'df_n_rows': df_n_rows,
+                   'df_n_cols': df_n_cols, 'df_cols': df_cols,
                    'df_describe_html': df_describe_html, 'png_files_path': png_files_path,
                    'corelation_explanation': explanation_strings, "df_html_columns": df_html_columns,
                    'df_html_json': df_html_json}
