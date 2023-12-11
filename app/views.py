@@ -17,8 +17,8 @@ from sklearn import metrics, utils, preprocessing
 from sklearn.model_selection import train_test_split
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import authenticate, login, logout, decorators
-from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 # logger = logging.getLogger(__name__)
 
@@ -167,7 +167,10 @@ def eda(request):
     user = request.user.id if request.user.id else request.session['guest_session_id']
 
     if user is not None:
-        explanation_strings = []
+        strong_positive = []
+        moderate_positive = []
+        strong_negative = []
+        moderate_negative = []
         file_path = media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'input_files'
         list_of_files = glob.glob(file_path + os.sep + '*')
 
@@ -255,28 +258,36 @@ def eda(request):
 
         try:
             data_corr = df.corr()
+            explanation = ""
+            checked_pairs = set()
 
-            # data_corr_columns = data_corr.columns
-            # explanation_done_columns = []
-            # for col1 in data_corr_columns:
-            #     for col2 in data_corr_columns:
-            #         if col1 != col2 and (col1, col2) not in explanation_done_columns:
-            #             corr_value = data_corr.loc[col1, col2]
-            #             if corr_value > 0.5:
-            #                 explanation = (f" There is a strong positive relationship between '{col1}' and '{col2}' "
-            #                                f"of {corr_value:.2f}. As one increases, the other tends to increase as well very highly")
-            #                 explanation_done_columns.append((col1, col2))
-            #                 explanation_done_columns.append((col2, col1))
-            #                 explanation_strings.append(explanation)
-            #             elif corr_value < -0.5:
-            #                 explanation = (f" There is a moderate negative relationship between '{col1}' and '{col2}' "
-            #                                f"of {corr_value:.2f}. As one increases, the other tends to decrease highly.")
-            #                 explanation_done_columns.append((col1, col2))
-            #                 explanation_done_columns.append((col2, col1))
-            #                 explanation_strings.append(explanation)
+            strong_positive = []
+            moderate_positive = []
+            strong_negative = []
+            moderate_negative = []
+
+            for col1 in data_corr.columns:
+                for col2 in data_corr.columns:
+                    if col1 != col2 and (col1, col2) not in checked_pairs and (col2, col1) not in checked_pairs:
+                        correlation_value = data_corr.loc[col1, col2] * 100
+
+                        if correlation_value > 70:
+                            strong_positive.append({'pair': (col1, col2), 'value': correlation_value})
+                        elif correlation_value > 50:
+                            moderate_positive.append({'pair': (col1, col2), 'value': correlation_value})
+                        elif correlation_value < -70:
+                            strong_negative.append({'pair': (col1, col2), 'value': correlation_value})
+                        elif correlation_value < -50:
+                            moderate_negative.append({'pair': (col1, col2), 'value': correlation_value})
+
+                        # Add the pair to the checked set to avoid redundant explanations
+                        checked_pairs.add((col1, col2))
 
             f, ax = plt.subplots(figsize=a4_dims)
-            sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
+            if len(data_corr.columns.tolist()) < 15:
+                sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
+            else:
+                sns.heatmap(data_corr, cmap='Blues', linewidths=.5)
             plt.title("Correlation Matrix", weight='bold', fontsize=15)
             correlation_name = folder + os.sep + 'correlation.png'
             plt.savefig(correlation_name, bbox_inches='tight', dpi=300)
@@ -289,10 +300,10 @@ def eda(request):
             return redirect('/data_preprocessing/')
 
         context = {'missing_value_message': missing_value_message, 'df_html': df_html, 'df_n_rows': df_n_rows,
-                   'df_n_cols': df_n_cols, 'df_cols': df_cols,
-                   'df_describe_html': df_describe_html, 'png_files_path': png_files_path,
-                   'corelation_explanation': explanation_strings, "df_html_columns": df_html_columns,
-                   'df_html_json': df_html_json}
+                   'df_n_cols': df_n_cols, 'df_cols': df_cols, 'df_describe_html': df_describe_html,
+                   'png_files_path': png_files_path, "df_html_columns": df_html_columns, 'df_html_json': df_html_json,
+                   'strong_positive': strong_positive, 'moderate_positive': moderate_positive,
+                   'strong_negative': strong_negative, 'moderate_negative': moderate_negative, }
         return render(request, "eda.html", context)
     else:
         return redirect('/signin/')
