@@ -20,23 +20,36 @@
     <h3 class="eda_heading">{{ project_name }}</h3>
     {% endif %}
 
+    <form id="form-id-1" class="border mt-5 border-secondary text-center p-3" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="myFile" class="form-control" accept=".csv">
+    <button type="submit" class="btn btn-primary btn-sm" name="predict_file">Predict</button>
+        <h6 style="text-align: left;margin-top: 2%;"><i>(Upload .csv file containing relevant columns and their data for bulk predictions)</i></h6>
+    </form>
     <form id="form-id" class="border mt-5 border-secondary text-center p-3" method="post">
         {% csrf_token %}
-        {% if model_name %}
+        <!--        {% if model_name %}-->
         <!--            <h4>{{model_name}}</h4>-->
-        {% endif %}
+        <!--        {% endif %}-->
+
+
+
         {% if col %}
         {% for c,v in col %}
         <div class="form-group">
-            <div><h5>{{c}}</h5><input style="width: 50%; display: inline-flex;border-color: #445e78!important;text-align: center;"
-                                    autocomplete="off" type="text" class="form-control" id="username" name="inputs" value="{{v}}" required></div>
+            <div><h5>{{c}}</h5><input
+                    style="width: 50%; display: inline-flex;border-color: #445e78!important;text-align: center;"
+                    autocomplete="off" type="text" class="form-control" id="username" name="inputs" value="{{v}}"
+                    required></div>
         </div>
         {% endfor %}
         {% endif %}
         <button type="submit" class="btn btn-primary btn-sm" name="predict">Predict</button>
     </form>
-    <div id="overlay" style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
-        <img id="loader" src="{% static 'img/loader_3.gif' %}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: auto; max-width: 100%; max-height: 100%;">
+    <div id="overlay"
+         style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
+        <img id="loader" src="{% static 'img/loader_3.gif' %}"
+             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; height: auto; max-width: 100%; max-height: 100%;">
     </div>
     <br>
     {% if predictions %}
@@ -52,12 +65,12 @@
 
 
 <script>
-document.getElementById('form-id').addEventListener('submit', function() {
-document.getElementById('overlay').style.display = 'block';
-});
-window.onload = function() {
-document.getElementById('overlay').style.display = 'none';
-};
+    document.getElementById('form-id').addEventListener('submit', function() {
+    document.getElementById('overlay').style.display = 'block';
+    });
+    window.onload = function() {
+    document.getElementById('overlay').style.display = 'none';
+    };
 </script>
 
 {% endblock %}
