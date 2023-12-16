@@ -22,7 +22,7 @@
 
     <form id="form-id-1" class="border mt-5 border-secondary text-center p-3" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <input type="file" name="myFile" class="form-control" accept=".csv">
+    <input type="file" name="myFile" class="form-control" accept=".csv" onchange="checkFileSize()">
     <button type="submit" class="btn btn-primary btn-sm" name="predict_file">Predict</button>
         <h6 style="text-align: left;margin-top: 2%;"><i>(Upload .csv file containing relevant columns and their data for bulk predictions)</i></h6>
     </form>
@@ -65,6 +65,21 @@
 
 
 <script>
+            function checkFileSize() {
+            var fileInput = document.getElementById('myFile');
+            var fileSize = fileInput.files[0] ? fileInput.files[0].size : 0; // in bytes
+            var maxSize = 5 * 1024 * 1024; // 5 MB in bytes
+            var errorContainer = document.getElementById('errorContainer');
+
+            // Reset error message
+            errorContainer.innerHTML = '';
+
+            if (fileSize > maxSize) {
+                errorContainer.innerHTML = 'File size exceeds the limit of 5 MB. Please choose a smaller file.';
+                // You can also reset the file input if needed
+                fileInput.value = '';
+            }
+        }
     document.getElementById('form-id').addEventListener('submit', function() {
     document.getElementById('overlay').style.display = 'block';
     });
