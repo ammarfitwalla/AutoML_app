@@ -31,8 +31,9 @@
         <div class="card">
 
         <div class="form-group" style="display:flex;align-items: flex-end;">
-            <input type="file" name="myFile" class="form-control" accept=".csv"> <h5>&nbsp;&nbsp;(.csv)</h5>
+            <input type="file" name="myFile" id="myFile" class="form-control" accept=".csv" onchange="checkFileSize()"> <h5>&nbsp;&nbsp;(.csv)</h5>
         </div>
+        <div id="errorContainer" style="color: red;"></div>
         <button type="submit" name="custom_file" class="btn btn-primary">Upload</button>
         </div>
 
@@ -140,6 +141,47 @@
 </style>
 
 <script>
+        function checkFileSize() {
+            var fileInput = document.getElementById('myFile');
+            var fileSize = fileInput.files[0] ? fileInput.files[0].size : 0; // in bytes
+            var maxSize = 5 * 1024 * 1024; // 5 MB in bytes
+            var errorContainer = document.getElementById('errorContainer');
+
+            // Reset error message
+            errorContainer.innerHTML = '';
+
+            if (fileSize > maxSize) {
+                errorContainer.innerHTML = 'File size exceeds the limit of 5 MB. Please choose a smaller file.';
+                // You can also reset the file input if needed
+                fileInput.value = '';
+            }
+        }
+
+function checkFileSelection() {
+    var fileInput = document.getElementById('myFile');
+    var errorContainer = document.getElementById('errorContainer');
+
+    // Reset error message and hide the loader
+    errorContainer.innerHTML = '';
+    document.getElementById('overlay').style.display = 'none';
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        errorContainer.innerHTML = 'Please select a CSV file before submitting.';
+        return false;
+    }
+
+    // Check if the selected file has a .csv extension
+    var fileName = fileInput.files[0].name;
+    if (!fileName.endsWith('.csv')) {
+        errorContainer.innerHTML = 'Please select a valid CSV file.';
+        return false;
+    }
+
+    // Display the loader only if the file selection is valid
+    document.getElementById('overlay').style.display = 'block';
+
+    return true;
+}
     document.getElementById('form-id').addEventListener('submit', function(event) {
         const excludedButtonIds = ["downloadTitanic", "downloadCarPurchase", "downloadEmployeeSalary", "downloadHousePrice"]; // Add more button IDs as needed
         if (!excludedButtonIds.includes(event.submitter.id)) {
