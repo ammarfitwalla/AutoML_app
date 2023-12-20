@@ -791,11 +791,6 @@ def model_testing(request, button_id):
             X = ast.literal_eval(model_data[0]['independent_variable'])
             y = model_data[0]['dependent_variable']
             predict = request.POST.getlist('inputs')
-            print('predict---', predict)
-
-            # predict = ["Male", 24, 50000]
-            # predict--- ['Male', '250', '500000']
-
             to_be_predicted = []
             for column, value in zip(col_names, predict):
                 if one_hot_decoder and column in one_hot_decoder.keys():
@@ -828,12 +823,6 @@ def model_testing(request, button_id):
                 sc_X.fit(pd.DataFrame(X))
                 to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
             test_data = [[y, str(model_file.predict(to_be_predicted)[0])]]
-            
-            
-            print('test_data==>', test_data)
-            # test_data==> [['Purchased', '1']]
-
-
             df_test = pd.DataFrame(test_data, columns=['Target Variable', 'Prediction'])
             df_test = df_test.to_html(classes="table table-bordered table-striped table-hover custom-table",
                                       index=False)
@@ -852,10 +841,7 @@ def model_test_api(request):
         if request.method == 'POST':
             username = request.POST.get('username')
             model_name = request.POST.get('model_name')
-            print(model_name)
-
             predict = request.POST.getlist('inputs')
-            print(predict)
 
             try:
                 user = User.objects.get(username=username)
@@ -863,23 +849,12 @@ def model_test_api(request):
                 raise Exception(f'User "{username}" does not exist')
             model_data = user.trainedmodels_set.filter(model_name=model_name).values()
 
-            # model_data = TrainedModels.objects.filter(user=username, model_name=model_name).values()
-            # print('model_data>>', model_data)
             if not model_data:
                 raise Exception(f'Model "{model_name}" not found')
-                # error_response = {'error': 'Model not found'}
-                # return JsonResponse(error_response, status=404)
-            # df_test, y = None, None
-            # project_name = model_data[0]['project_name']
             y = None
             model_name = model_data[0]['model_name']
             col_names = ast.literal_eval(model_data[0]['column_names'])
             predict = ["" for _ in col_names]
-
-
-            # if request.method == 'POST':
-
-
             sc_X = StandardScaler()
             model_file = model_data[0]['model_file']
             saved_model_type = model_data[0]['model_type']
@@ -892,11 +867,6 @@ def model_test_api(request):
                 if one_hot_decoder and column in one_hot_decoder.keys():
                     if value.lower() not in one_hot_decoder[column]:
                         raise Exception(f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
-                        # messages.error(request,
-                        #             f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
-                        # context = {'model_name': model_name, 'col': zip(col_names, predict),
-                        #         'project_name': project_name}
-                        # return render(request, 'model_testing.html', context)
                     val = one_hot_decoder[column][value.lower()]
                     if isinstance(val, int):
                         to_be_predicted.append(int(val))
@@ -910,10 +880,6 @@ def model_test_api(request):
                             to_be_predicted.append(float(value))
                     except (Exception,):
                         raise Exception(f'Improper value for column: "{column}"')
-                        # messages.error(request, f'Improper value for column: "{column}"')
-                        # context = {'model_name': model_name, 'col': zip(col_names, predict),
-                        #         'project_name': project_name}
-                        # return render(request, 'model_testing.html', context)
 
             model_file = pickle.loads(model_file)
             to_be_predicted = [to_be_predicted]
@@ -921,22 +887,13 @@ def model_test_api(request):
                 sc_X.fit(pd.DataFrame(X))
                 to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
 
-            # test_data = [[y, str(model_file.predict(to_be_predicted)[0])]]
-
             response_data = {
                 'Target Variable': y,
                 'Prediction': str(model_file.predict(to_be_predicted)[0])
             }
             return JsonResponse(response_data, status=200)
 
-            #     df_test = pd.DataFrame(test_data, columns=['Target Variable', 'Prediction'])
-            #     df_test = df_test.to_html(classes="table table-bordered table-striped table-hover custom-table",
-            #                             index=False)
-            # context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict),
-            #         'project_name': project_name}
-            # return render(request, 'model_testing.html', context)
         raise Exception("Invalid Request")
-
 
     except Exception as e:
         error_response = {'error': str(e)}
@@ -954,8 +911,6 @@ def delete_model_api(request):
             except User.DoesNotExist:
                 raise Exception(f'User "{username}" does not exist')
             model_instance = user.trainedmodels_set.filter(model_name=model_name).values()
-
-            # model_instance = TrainedModels.objects.filter(model_name=model_name).values()
             if not model_instance:
                 raise Exception(f'Model "{model_name}" not found!')
             project_name = model_instance[0]['project_name']
