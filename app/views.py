@@ -17,8 +17,8 @@ from sklearn import metrics, utils, preprocessing
 from sklearn.model_selection import train_test_split
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import authenticate, login, logout, decorators
-from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -170,7 +170,10 @@ def eda(request):
     user = request.user.id if request.user.id else request.session['guest_session_id']
 
     if user is not None:
-        explanation_strings = []
+        strong_positive = []
+        moderate_positive = []
+        strong_negative = []
+        moderate_negative = []
         file_path = media_path + os.sep + str(user) + os.sep + 'documents' + os.sep + 'input_files'
         list_of_files = glob.glob(file_path + os.sep + '*')
 
@@ -258,28 +261,36 @@ def eda(request):
 
         try:
             data_corr = df.corr()
+            explanation = ""
+            checked_pairs = set()
 
-            # data_corr_columns = data_corr.columns
-            # explanation_done_columns = []
-            # for col1 in data_corr_columns:
-            #     for col2 in data_corr_columns:
-            #         if col1 != col2 and (col1, col2) not in explanation_done_columns:
-            #             corr_value = data_corr.loc[col1, col2]
-            #             if corr_value > 0.5:
-            #                 explanation = (f" There is a strong positive relationship between '{col1}' and '{col2}' "
-            #                                f"of {corr_value:.2f}. As one increases, the other tends to increase as well very highly")
-            #                 explanation_done_columns.append((col1, col2))
-            #                 explanation_done_columns.append((col2, col1))
-            #                 explanation_strings.append(explanation)
-            #             elif corr_value < -0.5:
-            #                 explanation = (f" There is a moderate negative relationship between '{col1}' and '{col2}' "
-            #                                f"of {corr_value:.2f}. As one increases, the other tends to decrease highly.")
-            #                 explanation_done_columns.append((col1, col2))
-            #                 explanation_done_columns.append((col2, col1))
-            #                 explanation_strings.append(explanation)
+            strong_positive = []
+            moderate_positive = []
+            strong_negative = []
+            moderate_negative = []
+
+            for col1 in data_corr.columns:
+                for col2 in data_corr.columns:
+                    if col1 != col2 and (col1, col2) not in checked_pairs and (col2, col1) not in checked_pairs:
+                        correlation_value = data_corr.loc[col1, col2] * 100
+
+                        if correlation_value > 70:
+                            strong_positive.append({'pair': (col1, col2), 'value': correlation_value})
+                        elif correlation_value > 50:
+                            moderate_positive.append({'pair': (col1, col2), 'value': correlation_value})
+                        elif correlation_value < -70:
+                            strong_negative.append({'pair': (col1, col2), 'value': correlation_value})
+                        elif correlation_value < -50:
+                            moderate_negative.append({'pair': (col1, col2), 'value': correlation_value})
+
+                        # Add the pair to the checked set to avoid redundant explanations
+                        checked_pairs.add((col1, col2))
 
             f, ax = plt.subplots(figsize=a4_dims)
-            sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
+            if len(data_corr.columns.tolist()) < 15:
+                sns.heatmap(data_corr, cmap='Blues', annot=True, fmt=".2f", cbar=True, linewidths=.5)
+            else:
+                sns.heatmap(data_corr, cmap='Blues', linewidths=.5)
             plt.title("Correlation Matrix", weight='bold', fontsize=15)
             correlation_name = folder + os.sep + 'correlation.png'
             plt.savefig(correlation_name, bbox_inches='tight', dpi=300)
@@ -292,10 +303,10 @@ def eda(request):
             return redirect('/data_preprocessing/')
 
         context = {'missing_value_message': missing_value_message, 'df_html': df_html, 'df_n_rows': df_n_rows,
-                   'df_n_cols': df_n_cols, 'df_cols': df_cols,
-                   'df_describe_html': df_describe_html, 'png_files_path': png_files_path,
-                   'corelation_explanation': explanation_strings, "df_html_columns": df_html_columns,
-                   'df_html_json': df_html_json}
+                   'df_n_cols': df_n_cols, 'df_cols': df_cols, 'df_describe_html': df_describe_html,
+                   'png_files_path': png_files_path, "df_html_columns": df_html_columns, 'df_html_json': df_html_json,
+                   'strong_positive': strong_positive, 'moderate_positive': moderate_positive,
+                   'strong_negative': strong_negative, 'moderate_negative': moderate_negative, }
         return render(request, "eda.html", context)
     else:
         return redirect('/signin/')
@@ -523,19 +534,24 @@ def model_selection(request):
                 mae = metrics.mean_absolute_error(y_test, y_pred)
                 mse = metrics.mean_squared_error(y_test, y_pred)
                 rmse = np.sqrt(metrics.mean_squared_error(y_test, y_pred))
+
                 my_data = [['Model', model_name], ['Mean Absolute Error', mae],
                            ['Mean Squared Error', mse], ['Root Mean Squared Error', rmse]]
             else:
-                try:
+                unique_classes = y_test.nunique()
+                if unique_classes == 2:
                     accuracy = '%.2f' % (metrics.accuracy_score(y_test, y_pred) * 100) + ' %'
                     recall = '%.2f' % (metrics.recall_score(y_test, y_pred) * 100) + ' %'
                     f1 = '%.2f' % (metrics.f1_score(y_test, y_pred) * 100) + ' %'
                     precision = '%.2f' % (metrics.precision_score(y_test, y_pred) * 100) + ' %'
-
-                except (Exception,):
+                elif 15 > unique_classes > 2:
+                    accuracy = '%.2f' % (metrics.accuracy_score(y_test, y_pred) * 100) + ' %'
+                    recall = '%.2f' % (metrics.recall_score(y_test, y_pred, average='weighted') * 100) + ' %'
+                    f1 = '%.2f' % (metrics.f1_score(y_test, y_pred, average='weighted') * 100) + ' %'
+                    precision = '%.2f' % (metrics.precision_score(y_test, y_pred, average='weighted') * 100) + ' %'
+                else:
                     messages.info(request, 'For Regression problem, use only Regression model')
                     return redirect('/model_selection/')
-                    # return render(request, 'model_evaluation.html')
 
                 my_data = [['Model', model_name], ['Accuracy Score', accuracy],
                            ['Recall Score', recall], ['F1 score', f1], ['Precision', precision]]
@@ -784,48 +800,115 @@ def model_testing(request, button_id):
         col_names = ast.literal_eval(model_data[0]['column_names'])
         predict = ["" for _ in col_names]
         if request.method == 'POST':
-            sc_X = StandardScaler()
-            model_file = model_data[0]['model_file']
-            saved_model_type = model_data[0]['model_type']
-            one_hot_decoder = model_data[0]['oh_encoders']
-            X = ast.literal_eval(model_data[0]['independent_variable'])
-            y = model_data[0]['dependent_variable']
-            predict = request.POST.getlist('inputs')
-            to_be_predicted = []
-            for column, value in zip(col_names, predict):
-                if one_hot_decoder and column in one_hot_decoder.keys():
-                    if value.lower() not in one_hot_decoder[column]:
-                        messages.error(request,
-                                       f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
-                        context = {'model_name': model_name, 'col': zip(col_names, predict),
-                                   'project_name': project_name}
-                        return render(request, 'model_testing.html', context)
-                    val = one_hot_decoder[column][value.lower()]
-                    if isinstance(val, int):
-                        to_be_predicted.append(int(val))
-                    else:
-                        to_be_predicted.append(float(val))
-                else:
-                    try:
-                        if isinstance(value, int):
-                            to_be_predicted.append(int(value))
-                        else:
-                            to_be_predicted.append(float(value))
-                    except (Exception,):
-                        messages.error(request, f'Improper value for column: "{column}"')
-                        context = {'model_name': model_name, 'col': zip(col_names, predict),
-                                   'project_name': project_name}
-                        return render(request, 'model_testing.html', context)
+            if 'predict_file' in request.POST:
+                file = request.FILES.get('myFile')
+                try:
+                    df = pd.read_csv(file)
+                except Exception as e:
+                    messages.error(request, f'Error reading CSV file: {e}')
+                    context = {'model_name': model_name, 'col': zip(col_names, predict),
+                               'project_name': project_name}
+                    return render(request, 'model_testing.html', context)
 
-            model_file = pickle.loads(model_file)
-            to_be_predicted = [to_be_predicted]
-            if saved_model_type not in ['Linear Regression']:
-                sc_X.fit(pd.DataFrame(X))
-                to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
-            test_data = [[y, str(model_file.predict(to_be_predicted)[0])]]
-            df_test = pd.DataFrame(test_data, columns=['Target Variable', 'Prediction'])
-            df_test = df_test.to_html(classes="table table-bordered table-striped table-hover custom-table",
-                                      index=False)
+                missing_columns = set(col_names) - set(df.columns)
+                if missing_columns:
+                    messages.error(request,
+                                   f'The following columns are missing in the uploaded file: {", ".join(missing_columns)}')
+                    context = {'model_name': model_name, 'col': zip(col_names, predict),
+                               'project_name': project_name}
+                    return render(request, 'model_testing.html', context)
+
+                sc_X = StandardScaler()
+                model_file = pickle.loads(model_data[0]['model_file'])
+                saved_model_type = model_data[0]['model_type']
+                one_hot_decoder = model_data[0]['oh_encoders']
+                X = ast.literal_eval(model_data[0]['independent_variable'])
+                y = model_data[0]['dependent_variable']
+
+                df_selected = df[col_names]
+                all_predictions = []
+                for index, row in df_selected.iterrows():
+                    wrong_data = False
+                    to_be_predicted = []
+                    predict = list(row)
+                    for column, value in zip(col_names, predict):
+                        if one_hot_decoder and column in one_hot_decoder.keys():
+                            if str(value).lower() not in one_hot_decoder[column]:
+                                wrong_data = True
+                                break
+                            val = one_hot_decoder[column][value.lower()]
+                            if isinstance(val, int):
+                                to_be_predicted.append(int(val))
+                            else:
+                                to_be_predicted.append(float(val))
+                        else:
+                            try:
+                                if isinstance(value, int):
+                                    to_be_predicted.append(int(value))
+                                else:
+                                    to_be_predicted.append(float(value))
+                            except (Exception,):
+                                wrong_data = True
+                                break
+
+                    if wrong_data:
+                        all_predictions.append("Improper Inputs!")
+                    else:
+                        to_be_predicted = [to_be_predicted]
+                        if saved_model_type not in ['Linear Regression']:
+                            sc_X.fit(pd.DataFrame(X))
+                            to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
+                        test_data = str(model_file.predict(to_be_predicted)[0])
+                        all_predictions.append(test_data)
+                df_selected[y + "_(Predictions)"] = all_predictions
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="predictions.csv"'
+                df_selected.to_csv(path_or_buf=response, index=False)
+                # messages.success(request, "File Downloaded Successfully!")
+                return response
+            else:
+                predict = request.POST.getlist('inputs')
+                sc_X = StandardScaler()
+                model_file = model_data[0]['model_file']
+                saved_model_type = model_data[0]['model_type']
+                one_hot_decoder = model_data[0]['oh_encoders']
+                X = ast.literal_eval(model_data[0]['independent_variable'])
+                y = model_data[0]['dependent_variable']
+                to_be_predicted = []
+                for column, value in zip(col_names, predict):
+                    if one_hot_decoder and column in one_hot_decoder.keys():
+                        if value.lower() not in one_hot_decoder[column]:
+                            messages.error(request, f'Improper value for column: "{column}", '
+                                                    f'choose one from {list(one_hot_decoder[column].keys())}')
+                            context = {'model_name': model_name, 'col': zip(col_names, predict),
+                                       'project_name': project_name}
+                            return render(request, 'model_testing.html', context)
+                        val = one_hot_decoder[column][value.lower()]
+                        if isinstance(val, int):
+                            to_be_predicted.append(int(val))
+                        else:
+                            to_be_predicted.append(float(val))
+                    else:
+                        try:
+                            if isinstance(value, int):
+                                to_be_predicted.append(int(value))
+                            else:
+                                to_be_predicted.append(float(value))
+                        except (Exception,):
+                            messages.error(request, f'Improper value for column: "{column}"')
+                            context = {'model_name': model_name, 'col': zip(col_names, predict),
+                                       'project_name': project_name}
+                            return render(request, 'model_testing.html', context)
+
+                model_file = pickle.loads(model_file)
+                to_be_predicted = [to_be_predicted]
+                if saved_model_type not in ['Linear Regression']:
+                    sc_X.fit(pd.DataFrame(X))
+                    to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
+                test_data = [[y, str(model_file.predict(to_be_predicted)[0])]]
+                df_test = pd.DataFrame(test_data, columns=['Target Variable', 'Prediction'])
+                df_test = df_test.to_html(classes="table table-bordered table-striped table-hover custom-table",
+                                          index=False)
         context = {'model_name': model_name, 'predictions': df_test, 'col': zip(col_names, predict),
                    'project_name': project_name}
         return render(request, 'model_testing.html', context)
