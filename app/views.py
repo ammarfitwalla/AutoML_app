@@ -11,7 +11,7 @@ from app.models import *
 import category_encoders as ce
 from django.contrib import messages
 from pandas.api.types import is_string_dtype
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from django.utils.text import get_valid_filename
 from sklearn import metrics, utils, preprocessing
 from sklearn.model_selection import train_test_split
@@ -257,8 +257,13 @@ def eda(request):
             png_files_path.append(png_file_name)
 
         try:
-            data_corr = df.corr()
-            explanation = ""
+            df_corr = df.copy(deep=True)
+            if all_categorical:
+                label_encoder = LabelEncoder()
+                for column in all_categorical:
+                    df_corr[column] = label_encoder.fit_transform(df_corr[column])
+
+            data_corr = df_corr.corr()
             checked_pairs = set()
 
             strong_positive = []
