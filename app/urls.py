@@ -17,4 +17,7 @@ urlpatterns = [
     path('model_testing/<button_id>', views.model_testing, name='model_testing'),
     path('save_model/', views.save_model, name='save_model'),
     # path('profile/', views.profile, name='profile'),
+
+    path('api.model_test_api/', views.model_test_api),
+    path('api.delete_model_api/', views.delete_model_api)
 ]

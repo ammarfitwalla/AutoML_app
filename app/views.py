@@ -20,6 +20,9 @@ from django.contrib.auth import authenticate, login, logout, decorators
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
 # logger = logging.getLogger(__name__)
 
 media_path = settings.MEDIA_ROOT
@@ -916,3 +919,99 @@ def model_testing(request, button_id):
         return render(request, 'model_testing.html', context)
     else:
         return redirect('/signin/')
+
+
+
+
+@csrf_exempt
+def model_test_api(request):
+    try:
+        if request.method == 'POST':
+            username = request.POST.get('username')
+            model_name = request.POST.get('model_name')
+            predict = request.POST.getlist('inputs')
+
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                raise Exception(f'User "{username}" does not exist')
+            model_data = user.trainedmodels_set.filter(model_name=model_name).values()
+
+            if not model_data:
+                raise Exception(f'Model "{model_name}" not found')
+            y = None
+            model_name = model_data[0]['model_name']
+            col_names = ast.literal_eval(model_data[0]['column_names'])
+            predict = ["" for _ in col_names]
+            sc_X = StandardScaler()
+            model_file = model_data[0]['model_file']
+            saved_model_type = model_data[0]['model_type']
+            one_hot_decoder = model_data[0]['oh_encoders']
+            X = ast.literal_eval(model_data[0]['independent_variable'])
+            y = model_data[0]['dependent_variable']
+            predict = request.POST.getlist('inputs')
+            to_be_predicted = []
+            for column, value in zip(col_names, predict):
+                if one_hot_decoder and column in one_hot_decoder.keys():
+                    if value.lower() not in one_hot_decoder[column]:
+                        raise Exception(f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
+                    val = one_hot_decoder[column][value.lower()]
+                    if isinstance(val, int):
+                        to_be_predicted.append(int(val))
+                    else:
+                        to_be_predicted.append(float(val))
+                else:
+                    try:
+                        if isinstance(value, int):
+                            to_be_predicted.append(int(value))
+                        else:
+                            to_be_predicted.append(float(value))
+                    except (Exception,):
+                        raise Exception(f'Improper value for column: "{column}"')
+
+            model_file = pickle.loads(model_file)
+            to_be_predicted = [to_be_predicted]
+            if saved_model_type not in ['Linear Regression']:
+                sc_X.fit(pd.DataFrame(X))
+                to_be_predicted = sc_X.transform(pd.DataFrame(to_be_predicted, columns=col_names))
+
+            response_data = {
+                'Target Variable': y,
+                'Prediction': str(model_file.predict(to_be_predicted)[0])
+            }
+            return JsonResponse(response_data, status=200)
+
+        raise Exception("Invalid Request")
+
+    except Exception as e:
+        error_response = {'error': str(e)}
+        return JsonResponse(error_response, status=400)
+
+
+@csrf_exempt
+def delete_model_api(request):
+    try:
+        if request.method == 'POST':
+            username = request.POST.get('username')
+            model_name = request.POST.get('model_name')
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                raise Exception(f'User "{username}" does not exist')
+            model_instance = user.trainedmodels_set.filter(model_name=model_name).values()
+            if not model_instance:
+                raise Exception(f'Model "{model_name}" not found!')
+            project_name = model_instance[0]['project_name']
+            document = model_instance[0]['document']
+            document.delete()
+            model_instance.delete()
+
+            response_data = {
+                'message': f'Project "{project_name}" Deleted Successfully!'
+            }
+            return JsonResponse(response_data)
+        raise Exception('Invalid Request')
+    
+    except Exception as e:
+        error_response = {'error': str(e)}
+        return JsonResponse(error_response, status=400)
