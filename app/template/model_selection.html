@@ -61,7 +61,9 @@
     {% if actual_pred_df %}
     <div>
         <h3 class="eda_heading">MACHINE LEARNING MODEL PREDICTIONS</h3>
-        {{actual_pred_df | safe}}
+        <div class="card" style="display:block;">
+            {{actual_pred_df | safe}}
+        </div>
     </div>
 
     {% endif %}
@@ -140,7 +142,7 @@
         columns: columns,
         data: dataSet,
         sScrollX: true,
-        "sScrollXInner": "110%",
+        "sScrollXInner": "100%",
         });
 
 </script>

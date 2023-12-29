@@ -214,7 +214,7 @@ def eda(request):
         # df_html = divide_columns_into_df(df.sample(20))
         # df_html = [i.to_html(classes="table table-bordered table-striped table-hover custom-table", index=False) for i
         #            in df_html]
-        df_html = df.sample(100)
+        df_html = df.sample(100) if len(df) >= 100 else df.sample(len(df))
         df_html_json = df_html.values.astype(str).tolist()
         df_html_columns = df_html.columns.astype(str).to_list()
         df_html = df_html.to_html(
@@ -588,9 +588,16 @@ def model_selection(request):
                 actual_pred_df[dependent_variable + ' (Predictions)'].replace(reversed_mapping, inplace=True)
 
             if oh_encoders_json_file:
+                columns_to_delete = []
                 for column, column_mapping in oh_encoders_json_file.items():
-                    reversed_mapping = {v: k for k, v in column_mapping.items()}
-                    actual_pred_df[column].replace(reversed_mapping, inplace=True)
+                    if column in actual_pred_df.columns:
+                        reversed_mapping = {v: k for k, v in column_mapping.items()}
+                        actual_pred_df[column].replace(reversed_mapping, inplace=True)
+                    else:
+                        columns_to_delete.append(column)
+
+                for column in columns_to_delete:
+                    del oh_encoders_json_file[column]
 
             actual_pred_df_json = actual_pred_df.values.tolist()
             actual_pred_df_columns = actual_pred_df.columns.astype(str).to_list()
@@ -697,7 +704,7 @@ def model_evaluation(request):
 def save_model(request):
     if 'guest_session_id' in request.session and not request.user.is_authenticated:
         messages.warning(request, 'Create an account to save the model.')
-        return redirect('/model_evaluation/')
+        return redirect('/model_selection/')
     elif 'guest_session_id' not in request.session and not request.user.is_authenticated:
         return redirect('/signin/')
 
@@ -921,8 +928,6 @@ def model_testing(request, button_id):
         return redirect('/signin/')
 
 
-
-
 @csrf_exempt
 def model_test_api(request):
     try:
@@ -954,7 +959,8 @@ def model_test_api(request):
             for column, value in zip(col_names, predict):
                 if one_hot_decoder and column in one_hot_decoder.keys():
                     if value.lower() not in one_hot_decoder[column]:
-                        raise Exception(f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
+                        raise Exception(
+                            f'Improper value for column: "{column}", choose one from {list(one_hot_decoder[column].keys())}')
                     val = one_hot_decoder[column][value.lower()]
                     if isinstance(val, int):
                         to_be_predicted.append(int(val))
@@ -1011,7 +1017,7 @@ def delete_model_api(request):
             }
             return JsonResponse(response_data)
         raise Exception('Invalid Request')
-    
+
     except Exception as e:
         error_response = {'error': str(e)}
         return JsonResponse(error_response, status=400)
