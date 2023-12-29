@@ -23,11 +23,13 @@
     <form id="form-id-1" class="border mt-5 border-secondary text-center p-3" method="post"
           enctype="multipart/form-data" onsubmit="return checkFileSelection()">
         {% csrf_token %}
+        <!--        <h5 class="eda_heading">Bulk Predictions</h5>-->
         <input type="file" name="myFile" id="myFile" class="form-control" accept=".csv" onchange="checkFileSize()">
         <div id="errorContainer" style="color: red;"></div>
         <button type="submit" class="btn btn-primary btn-sm" name="predict_file">Predict</button>
-        <h6 style="text-align: left;margin-top: 2%;"><i>(Upload .csv file containing relevant columns and their data for
-            bulk predictions)</i></h6>
+        <h6 style="text-align: left;margin-top: 2%;"><i>
+            (Upload a .csv file with the relevant columns and their corresponding data for conducting bulk
+            predictions.)</i></h6>
     </form>
     <form id="form-id" class="border mt-5 border-secondary text-center p-3" method="post">
         {% csrf_token %}
@@ -47,6 +49,8 @@
         {% endfor %}
         {% endif %}
         <button type="submit" class="btn btn-primary btn-sm" name="predict">Predict</button>
+        <h6 style="text-align: left;margin-top: 2%;"><i>(Enter data into the input boxes corresponding to each column
+            for personalized data predictions.)</i></h6>
     </form>
     <div id="overlay"
          style="display: none; position: fixed; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); z-index: 2; cursor: pointer;">
@@ -59,11 +63,6 @@
     {% endif %}
 
 </div>
-
-<!--<p class="footer-heart">-->
-<!--  Made with <g-emoji class="g-emoji" alias="heart" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png">-->
-<!--<img class="emoji" alt="heart" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2764.png"></g-emoji> | <a href="https://armin.id">ammarfitwalla</a>-->
-<!--</p>-->
 
 
 <script>
@@ -93,6 +92,10 @@ function checkFileSelection() {
 
     if (!fileInput.files || fileInput.files.length === 0) {
         errorContainer.innerHTML = 'Please select a CSV file before submitting.';
+        // Display error for 5 seconds
+        setTimeout(function () {
+            errorContainer.innerHTML = '';
+        }, 5000);
         return false;
     }
 
@@ -100,6 +103,10 @@ function checkFileSelection() {
     var fileName = fileInput.files[0].name;
     if (!fileName.endsWith('.csv')) {
         errorContainer.innerHTML = 'Please select a valid CSV file.';
+        // Display error for 5 seconds
+        setTimeout(function () {
+            errorContainer.innerHTML = '';
+        }, 7000);
         return false;
     }
 
@@ -108,6 +115,7 @@ function checkFileSelection() {
 
     return true;
 }
+
 
 document.getElementById('form-id').addEventListener('submit', function() {
 document.getElementById('overlay').style.display = 'block';
